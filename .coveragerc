@@ -1,0 +1,5 @@
+[run]
+include = twitch_osu_bot/*
+omit = *migrations*, *tests*
+plugins =
+    django_coverage_plugin
