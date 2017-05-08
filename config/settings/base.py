@@ -57,6 +57,8 @@ LOCAL_APPS = [
     # custom users app
     'twitch_osu_bot.users.apps.UsersConfig',
     # Your stuff: custom apps go here
+    'twitch_osu_bot.irc.apps.IrcConfig',
+    'twitch_osu_bot.streams.apps.StreamsConfig',
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -280,3 +282,13 @@ ADMIN_URL = r'^admin/'
 
 # Your common stuff: Below this line define 3rd party library settings
 # ------------------------------------------------------------------------------
+
+# TWITCH CONFIGURATION
+# --------------------
+TWITCH_USERNAME = env.str('TWITCH_USERNAME', '')
+TWITCH_PASSWORD = env.str('TWITCH_PASSWORD', 'oauth:')
+
+# OSU CONFIGURATION
+BANCHO_USERNAME = env.str('BANCHO_USERNAME', '')
+BANCHO_PASSWORD = env.str('BANCHO_PASSWORD', '')
+OSU_API_KEY = env.str('OSU_API_KEY', '')

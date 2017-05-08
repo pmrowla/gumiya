@@ -4,13 +4,13 @@
 {% block title %}{{ user.username }}{% endblock %}
 
 {% block content %}
-  <h1>{{ user.username }}</h1>
-  <form class="form-horizontal" method="post" action="{% url 'users:update' %}">
+  <h2>Update Osu! username for twitch.tv/{{ user.username }}</h2>
+  <form class="form-horizontal" method="post" action="{% url 'users:osu-account' %}">
     {% csrf_token %}
     {{ form|crispy }}
     <div class="control-group">
       <div class="controls">
-        <button type="submit" class="btn">Update</button>
+        <button type="submit" class="btn" name="action_set">Update</button>
       </div>
     </div>
   </form>

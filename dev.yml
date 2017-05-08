@@ -27,3 +27,21 @@ services:
       - .:/app
     ports:
       - "8000:8000"
+
+  irc:
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile-dev
+    environment:
+      - POSTGRES_USER=twitch_osu_bot
+      - USE_DOCKER=yes
+      - TWITCH_USERNAME=
+      - TWITCH_PASSWORD=
+      - BANCHO_USERNAME=
+      - BANCHO_PASSWORD=
+      - OSU_API_KEY=
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+    command: python manage.py ircbot

@@ -1,35 +1,111 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
+{% load streams_tags %}
 
 {% block title %}User: {{ object.username }}{% endblock %}
 
 {% block content %}
 <div class="container">
-
+  {% if object == request.user %}
   <div class="row">
-    <div class="col-sm-12">
+    <div class="col-sm-6">
+      <h2 class="card-title">Accounts</h2>
+      <div class="card">
+        <div class="card-block">
+          <form action="{% url 'users:osu-account' %}" class="osu_settings" method="post">
+            {% csrf_token %}
+            <fieldset class="blockLabels">
+              <dl class="row">
+                <dt class="col-sm-2">Twitch</dt>
+                <dd class="col-sm-10"><a href="https://www.twitch.tv/{{ object.username }}">twitch.tv/{{ object.username }}</a></dd>
+                {% if object.osu_username %}
+                <dt class="col-sm-2">osu!</dt>
+                <dd class="col-sm-10">
+                  <a href="https://osu.ppy.sh/u/{{ object.osu_username.username }}">{{ object.osu_username.username }}</a>
+                  {% if object.osu_username.verified %}
+                  <span class="text-success fa fa-check-circle-o" data-toggle="tooltip" data-placement="right" title="Verified"></span>
+                  {% else %}
+                  <span class="text-danger fa fa-times-circle-o" data-toggle="tooltip" data-placement="right" title="Not verified"></span>
+                  {% endif %}
+                  <input type="hidden" name="username" value="{{ object.osu_username.username }}">
+                </dd>
+                {% endif %}
+              </dl>
+              <div class="btn-group-vertical">
+              {% if object.osu_username %}
+                <button type="submit" class="btn btn-secondary" name="action_set" type="submit">{% trans "Change osu! username" %}</button>
+                {% if not object.osu_username.verified %}
+                <button type="submit" class="btn btn-secondary" name="action_verify" type="submit">{% trans "Restart verification" %}</button>
+                {% endif %}
+                <button type="submit" name="action_unlink" class="btn btn-danger">{% trans "Unlink your osu! account" %}</button>
+              {% else %}
+                <button type="submit" class="btn btn-sm btn-primary" name="action_set" type="submit">{% trans "Link your osu! account" %}</button>
+              {% endif %}
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <h2>Bot Settings</h2>
+      {% if object.osu_username and object.osu_username.verified %}
+      <div class="card">
+        <div class="card-block">
+          <h3 class="card-title">General</h3>
+          <table class="table table-sm table-striped">
+            <tr>
+              <th>Twitch bot enabled</th>
+              <td>{% if object.twitch_user.bot_options.enabled %}Yes{% else %}No{% endif %}</td>
+            </tr>
+            <tr>
+              <th>Subscribers only mode</th>
+              <td>{% if object.twitch_user.bot_options.subs_only %}Enabled{% else %}Disabled{% endif %}</td>
+            </tr>
+          </table>
 
-      <h2>{{ object.username }}</h2>
-      {% if object.osu_username %}
-        <p>Osu! username: {{ object.osu_username }}</p>
+          <h3 class="card-title">Beatmap Requests</h3>
+          <table class="table table-sm table-striped">
+            <tr>
+              <th>Allowed map types</th>
+              <td>{{ object.twitch_user.bot_options.beatmap_allowed_status|beatmap_status }}</td>
+            </tr>
+            <tr>
+              <th>Minimum star rating</th>
+              <td>{{ object.twitch_user.bot_options.beatmap_min_stars }}</td>
+            </tr>
+            <tr>
+              <th>Maximum star rating</th>
+              <td>{{ object.twitch_user.bot_options.beatmap_max_stars }}</td>
+            </tr>
+          </table>
+          <a class="btn btn-primary" href="{% url 'streams:settings' %}">{% trans "Change bot settings" %}</a>
+        </div>
+      </div>
+      {% else %}
+      <p class="card-text">The twitch bot cannot be enabled until you have linked and verified an osu! account.</p>
       {% endif %}
     </div>
   </div>
-
-{% if object == request.user %}
-<!-- Action buttons -->
-<div class="row">
-
-  <div class="col-sm-12">
-    <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
-    <a class="btn btn-primary" href="{% url 'account_email' %}" role="button">E-Mail</a>
-    <!-- Your Stuff: Custom user template urls -->
-  </div>
-
-</div>
-<!-- End Action buttons -->
-{% endif %}
-
-
+  {% endif %}
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+<script type="text/javascript">
+  (function() {
+    var message = "{% trans 'Do you really want to unlink your osu! account?' %}";
+    var actions = document.getElementsByName('action_unlink');
+    if (actions.length) {
+      actions[0].addEventListener("click", function(e) {
+        if (! confirm(message)) {
+          e.preventDefault();
+        }
+      });
+    }
+  })();
+</script>
+{% endblock extra_js %}
