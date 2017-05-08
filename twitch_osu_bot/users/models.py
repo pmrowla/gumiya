@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import AbstractUser
 from django.core.urlresolvers import reverse
@@ -46,7 +47,7 @@ class OsuUsername(models.Model):
         if message:
             msg = ('To verify your account, PM the following message in game to '
                    '{} (verification key will expire in 15 minutes): '
-                   '!verify {}'.format('pmrowla', confirmation.key))
+                   '!verify {}'.format(settings.BANCHO_USERNAME, confirmation.key))
             messages.info(request, msg)
         return confirmation
 

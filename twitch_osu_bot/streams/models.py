@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import re
+
 from django.db import models
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
-    validate_comma_separated_integer_list)
+    RegexValidator)
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -62,7 +64,9 @@ class BotOptions(models.Model):
 
     beatmap_allowed_status = models.CharField(
         _('allowed beatmap status for requests'),
-        validators=[validate_comma_separated_integer_list],
+        validators=[
+            RegexValidator(re.compile(r'^([-\d,])+$'), _(u'Enter only integers separated by commas.'), 'invalid'),
+        ],
         default=','.join([str(BeatmapStatus.ranked.value), str(BeatmapStatus.approved.value)]),
         max_length=64)
     beatmap_min_stars = models.FloatField(
