@@ -50,6 +50,8 @@ class Command(BaseCommand):
             nick=settings.TWITCH_USERNAME,
             password=settings.TWITCH_PASSWORD,
             osu_api_key=settings.OSU_API_KEY,
+            tillerino_api_key=settings.TILLERINO_API_KEY,
+            bancho_nick=settings.BANCHO_USERNAME,
         )
         twitch_config.update(config_common)
 

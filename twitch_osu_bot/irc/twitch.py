@@ -13,7 +13,7 @@ from osuapi import OsuApi, AHConnector
 from osuapi.errors import HTTPError
 
 from ..streams.models import TwitchUser
-from ..utils import TwitchApi
+from ..utils import TillerinoApi, TwitchApi
 
 
 @irc3.plugin
@@ -22,10 +22,12 @@ class Twitch:
     def __init__(self, bot):
         self.bot = bot
         self.bancho_queue = self.bot.config.get('bancho_queue')
+        self.bancho_nick = self.bot.config.get('bancho_nick')
         self.osu = OsuApi(
             self.bot.config.get('osu_api_key'),
             connector=AHConnector())
         self.twitch = TwitchApi()
+        self.tillerino = TillerinoApi(self.bot.config.get('tillerino_api_key'))
         self.joined = set()
         self.finished = False
 
@@ -41,6 +43,40 @@ class Twitch:
         self.bot.log.info('Connected to twitch as {}'.format(self.bot.nick))
 
     @asyncio.coroutine
+    def _get_pp(self, beatmap):
+        data = self.tillerino.beatmapinfo(beatmap.beatmap_id)
+        if data:
+            pp = {}
+            for entry in data['ppForAcc']['entry']:
+                pp[float(entry['key'])] = float(entry['value'])
+            if pp:
+                beatmap.pp = pp
+                return pp
+        beatmap.pp = None
+        return None
+
+    @asyncio.coroutine
+    def _beatmap_msg(self, beatmap):
+        msg = '[{}] {} - {} [{}] (by {}), ♫ {:g}, ★ {:.2f}'.format(
+            beatmap.approved.name.capitalize(),
+            beatmap.artist,
+            beatmap.title,
+            beatmap.version,
+            beatmap.creator,
+            beatmap.bpm,
+            round(beatmap.difficultyrating, 2),
+        )
+        pp = yield from self._get_pp(beatmap)
+        if pp:
+            msg = ' | '.join([
+                msg,
+                '95%: {}pp'.format(round(pp[.95])),
+                '98%: {}pp'.format(round(pp[.98])),
+                '100%: {}pp'.format(round(pp[1.0])),
+            ])
+        return msg
+
+    @asyncio.coroutine
     def _request_mapset(self, match, mask, target):
         try:
             mapset = yield from self.osu.get_beatmaps(
@@ -52,15 +88,7 @@ class Twitch:
             return (None, None)
         beatmap = sorted(
             mapset, key=lambda x: x.difficultyrating)[-1]
-        msg = '[{}] {} - {} (by {}), ♫ {:g}, hardest diff [{}] ★ {:.2f}'.format(
-            beatmap.approved.name.capitalize(),
-            beatmap.artist,
-            beatmap.title,
-            beatmap.creator,
-            beatmap.bpm,
-            beatmap.version,
-            round(beatmap.difficultyrating, 2),
-        )
+        msg = yield from self._beatmap_msg(beatmap)
         return (beatmap, msg)
 
     @asyncio.coroutine
@@ -75,15 +103,7 @@ class Twitch:
             self.bot.log.debug(e)
             return (None, None)
         beatmap = beatmap[0]
-        msg = '[{}] {} - {} [{}] (by {}), ♫ {:g}, ★ {:.2f}'.format(
-            beatmap.approved.name.capitalize(),
-            beatmap.artist,
-            beatmap.title,
-            beatmap.version,
-            beatmap.creator,
-            beatmap.bpm,
-            round(beatmap.difficultyrating, 2),
-        )
+        msg = yield from self._beatmap_msg(beatmap)
         return (beatmap, msg)
 
     @irc3.event(irc3.rfc.PRIVMSG)
@@ -93,7 +113,7 @@ class Twitch:
             return
         if tags:
             tags = tags.tagdict
-            print(tags)
+            # print(tags)
         patterns = [
             (r'https?://osu\.ppy\.sh/b/(?P<beatmap_id>\d+)',
              self._request_beatmap),
@@ -122,7 +142,14 @@ class Twitch:
                             round(beatmap.diff_overall, 1),
                         ),
                     ])
-                    yield from self.bancho_queue.put(('pmrowla', bancho_msg))
+                    if beatmap.pp:
+                        bancho_msg = ' | '.join([
+                            bancho_msg,
+                            '95%: {}pp'.format(round(beatmap.pp[.95])),
+                            '98%: {}pp'.format(round(beatmap.pp[.98])),
+                            '100%: {}pp'.format(round(beatmap.pp[1.0])),
+                        ])
+                    yield from self.bancho_queue.put((self.bancho_nick, bancho_msg))
                 if msg:
                     self.bot.privmsg(target, msg)
                 break
