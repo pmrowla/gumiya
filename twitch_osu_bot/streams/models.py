@@ -77,3 +77,7 @@ class BotOptions(models.Model):
         _('maximum allowed stars for beatmap requests'),
         validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
         default=10.0)
+
+    @property
+    def allowed_status_list(self):
+        return [BeatmapStatus(int(x)) for x in self.beatmap_allowed_status.split(',')]

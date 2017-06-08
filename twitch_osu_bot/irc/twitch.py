@@ -12,8 +12,14 @@ import irc3
 from osuapi import OsuApi, AHConnector
 from osuapi.errors import HTTPError
 
-from ..streams.models import TwitchUser
+from ..streams.models import BotOptions, TwitchUser
 from ..utils import TillerinoApi, TwitchApi
+
+
+class BeatmapValidationError(Exception):
+
+    def __init__(self, reason):
+        self.reason = reason
 
 
 @irc3.plugin
@@ -29,6 +35,7 @@ class Twitch:
         self.twitch = TwitchApi()
         self.tillerino = TillerinoApi(self.bot.config.get('tillerino_api_key'))
         self.joined = set()
+        self.twitch_ids = {}
         self.finished = False
 
     def server_ready(self):
@@ -55,6 +62,61 @@ class Twitch:
         beatmap.pp = None
         return None
 
+    def validate_beatmaps(self, beatmaps, options):
+        valid_beatmaps = []
+        if len(beatmaps) > 1:
+            mapset = True
+        else:
+            mapset = False
+        for beatmap in beatmaps:
+            if beatmap.approved not in options.allowed_status_list:
+                if mapset:
+                    reason = 'Rejecting [{}] mapset {} - {} (by {}): Approved status must be one of: {}'.format(
+                        beatmap.approved.name.capitalize(),
+                        beatmap.artist,
+                        beatmap.title,
+                        beatmap.creator,
+                        ', '.join(map(lambda x: x.name.capitalize(), options.allowed_status_list))
+                    )
+                else:
+                    reason = 'Rejecting [{}] beatmap {} - {} [{}] (by {}): Approved status must be one of: {}'.format(
+                        beatmap.approved.name.capitalize(),
+                        beatmap.artist,
+                        beatmap.title,
+                        beatmap.version,
+                        beatmap.creator,
+                        ', '.join(map(lambda x: x.name.capitalize(), options.allowed_status_list))
+                    )
+                raise BeatmapValidationError(reason)
+            elif beatmap.difficultyrating >= options.beatmap_min_stars \
+                    and beatmap.difficultyrating <= options.beatmap_max_stars:
+                valid_beatmaps.append(beatmap)
+        if not valid_beatmaps:
+            if mapset:
+                reason = (
+                    'Rejecting mapset {} - {} (by {}): '
+                    'Must contain at least one beatmap with difficulty in range {:g} to {:g} ★'.format(
+                        beatmaps[0].artist,
+                        beatmaps[0].title,
+                        beatmaps[0].creator,
+                        round(options.beatmap_min_stars, 2),
+                        round(options.beatmap_max_stars, 2)
+                    ))
+            else:
+                reason = (
+                    'Rejecting beatmap {} - {} [{}] (by {}) {:g} ★: '
+                    'Difficulty must be in range {:g} ★ to {:g} ★'.format(
+                        beatmaps[0].artist,
+                        beatmaps[0].title,
+                        beatmaps[0].version,
+                        beatmaps[0].creator,
+                        round(beatmaps[0].difficultyrating, 2),
+                        round(options.beatmap_min_stars, 2),
+                        round(options.beatmap_max_stars, 2)
+                    ))
+            raise BeatmapValidationError(reason)
+        return valid_beatmaps
+
     @asyncio.coroutine
     def _beatmap_msg(self, beatmap):
         msg = '[{}] {} - {} [{}] (by {}), ♫ {:g}, ★ {:.2f}'.format(
@@ -77,32 +139,38 @@ class Twitch:
         return msg
 
     @asyncio.coroutine
-    def _request_mapset(self, match, mask, target):
+    def _request_mapset(self, match, mask, target, options):
         try:
             mapset = yield from self.osu.get_beatmaps(
                 beatmapset_id=match.group('mapset_id'),
                 include_converted=0)
             if not mapset:
                 return (None, None)
+            mapset = sorted(mapset, key=lambda x: x.difficultyrating)
         except HTTPError:
             return (None, None)
-        beatmap = sorted(
-            mapset, key=lambda x: x.difficultyrating)[-1]
+        try:
+            beatmap = self.validate_beatmaps(mapset, options)[-1]
+        except BeatmapValidationError as e:
+            return (None, e.reason)
         msg = yield from self._beatmap_msg(beatmap)
         return (beatmap, msg)
 
     @asyncio.coroutine
-    def _request_beatmap(self, match, mask, target):
+    def _request_beatmap(self, match, mask, target, options):
         try:
-            beatmap = yield from self.osu.get_beatmaps(
+            beatmaps = yield from self.osu.get_beatmaps(
                 beatmap_id=match.group('beatmap_id'),
                 include_converted=0)
-            if not beatmap:
+            if not beatmaps:
                 return (None, None)
         except HTTPError as e:
             self.bot.log.debug(e)
             return (None, None)
-        beatmap = beatmap[0]
+        try:
+            beatmap = self.validate_beatmaps(beatmaps, options)[0]
+        except BeatmapValidationError as e:
+            return (None, e.reason)
         msg = yield from self._beatmap_msg(beatmap)
         return (beatmap, msg)
 
@@ -114,6 +182,7 @@ class Twitch:
         if tags:
             tags = tags.tagdict
             # print(tags)
+        options = BotOptions.objects.get(twitch_user__twitch_id=self.twitch_ids[str(target)])
         patterns = [
             (r'https?://osu\.ppy\.sh/b/(?P<beatmap_id>\d+)',
              self._request_beatmap),
@@ -123,7 +192,7 @@ class Twitch:
         for pattern, callback in patterns:
             m = re.match(pattern, data)
             if m:
-                (beatmap, msg) = yield from callback(m, mask, target)
+                (beatmap, msg) = yield from callback(m, mask, target, options)
                 if beatmap:
                     m, s = divmod(beatmap.total_length, 60)
                     bancho_msg = ' '.join([
@@ -174,11 +243,16 @@ class Twitch:
             for stream in self.twitch.get_live_streams(twitch_users=twitch_users):
                 if stream:
                     name = stream['channel']['name']
-                    live.add('#{}'.format(name))
+                    twitch_id = stream['channel']['_id']
+                    channel = '#{}'.format(name)
+                    self.twitch_ids[channel] = twitch_id
+                    live.add(channel)
             joins = live.difference(self.joined)
             parts = self.joined.difference(live)
             for channel in joins:
                 self.join(channel)
             for channel in parts:
                 self.part(channel)
+                if channel in self.twitch_ids:
+                    del self.twitch_ids[channel]
             yield from asyncio.sleep(30)
