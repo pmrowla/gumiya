@@ -31,6 +31,7 @@ services:
       - django
     command: python /app/manage.py ircbot
     env_file: .env
+    restart: on-failure
 
   nginx:
     build: ./compose/nginx
