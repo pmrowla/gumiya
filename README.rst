@@ -13,7 +13,7 @@ Osu! Twitch (+Bancho) chat bot.
 
 Usage
 -----
-1. Sign in to https://osu.pmrowla.com/
+1. Sign in to https://gumiya.pmrowla.com/
 2. Link and verify your osu! account
 3. Configure and enable the bot
 

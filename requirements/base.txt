@@ -55,4 +55,4 @@ django-compressor==2.1.1
 irc3>=1.0.0
 aiohttp>=2.0.7
 aiocron>=0.6
-osuapi>=0.0.14
+osuapi>=0.0.15
