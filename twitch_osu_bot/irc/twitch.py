@@ -182,7 +182,10 @@ class Twitch:
         if tags:
             tags = tags.tagdict
             # print(tags)
-        options = BotOptions.objects.get(twitch_user__twitch_id=self.twitch_ids[str(target)])
+        try:
+            options = BotOptions.objects.get(twitch_user__twitch_id=self.twitch_ids[str(target)])
+        except BotOptions.DoesNotExist:
+            return
         patterns = [
             (r'https?://osu\.ppy\.sh/b/(?P<beatmap_id>\d+)',
              self._request_beatmap),
@@ -240,19 +243,20 @@ class Twitch:
             self.bot.log.debug('Checking for live streams')
             live = set()
             twitch_users = TwitchUser.objects.all_enabled_and_verified()
-            for stream in self.twitch.get_live_streams(twitch_users=twitch_users):
-                if stream:
-                    name = stream['channel']['name']
-                    twitch_id = stream['channel']['_id']
-                    channel = '#{}'.format(name)
-                    self.twitch_ids[channel] = twitch_id
-                    live.add(channel)
-            joins = live.difference(self.joined)
-            parts = self.joined.difference(live)
-            for channel in joins:
-                self.join(channel)
-            for channel in parts:
-                self.part(channel)
-                if channel in self.twitch_ids:
-                    del self.twitch_ids[channel]
+            if twitch_users.exists():
+                for stream in self.twitch.get_live_streams(twitch_users=twitch_users):
+                    if stream:
+                        name = stream['channel']['name']
+                        twitch_id = stream['channel']['_id']
+                        channel = '#{}'.format(name)
+                        self.twitch_ids[channel] = twitch_id
+                        live.add(channel)
+                joins = live.difference(self.joined)
+                parts = self.joined.difference(live)
+                for channel in joins:
+                    self.join(channel)
+                for channel in parts:
+                    self.part(channel)
+                    if channel in self.twitch_ids:
+                        del self.twitch_ids[channel]
             yield from asyncio.sleep(30)

@@ -8,6 +8,8 @@ from django.core.management.base import BaseCommand
 
 import irc3
 
+from twitch_osu_bot.irc.bancho import BanchoConnection
+
 
 class Command(BaseCommand):
 
@@ -26,7 +28,7 @@ class Command(BaseCommand):
             'irc3.plugins.command.masks': {
                 'hash': '#',
                 '*': 'view',
-            }
+            },
         }
         if settings.DEBUG:
             config_common['debug'] = True
@@ -66,13 +68,13 @@ class Command(BaseCommand):
                 'twitch_osu_bot.irc.bancho',
             ],
             nick=settings.BANCHO_USERNAME,
-            password=settings.BANCHO_PASSWORD
+            password=settings.BANCHO_PASSWORD,
         )
         bancho_config.update(config_common)
         twitch_bot = irc3.IrcBot(loop=loop, bancho_queue=bancho_queue, **twitch_config)
         twitch_bot.run(forever=False)
 
-        bancho_bot = irc3.IrcBot(loop=loop, bancho_queue=bancho_queue, **bancho_config)
+        bancho_bot = irc3.IrcBot(loop=loop, bancho_queue=bancho_queue, connection=BanchoConnection, **bancho_config)
         bancho_bot.run(forever=False)
 
         loop.run_forever()
