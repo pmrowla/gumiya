@@ -1,5 +1,5 @@
 """
-Django settings for twitch-osu-bot project.
+Django settings for gumiya.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/

@@ -1,5 +1,5 @@
-twitch-osu-bot
-==============
+gumiya
+======
 
 Osu! Twitch (+Bancho) chat bot.
 
