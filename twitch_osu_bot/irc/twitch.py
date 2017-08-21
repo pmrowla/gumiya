@@ -174,14 +174,27 @@ class Twitch:
         msg = yield from self._beatmap_msg(beatmap)
         return (beatmap, msg)
 
+    def _badge_list(self, badges):
+        b_list = []
+        for x in badges.split(','):
+            (badge, version) = x.split('/', 1)
+            b_list.append(badge)
+        return b_list
+
+    def _is_sub(self, privmsg_tags):
+        badges = self._badge_list(privmsg_tags.get('badges', ''))
+        if any(b in badges for b in ['broadcaster', 'moderator', 'subscriber']):
+            return True
+        elif privmsg_tags.get('mod', 0) == 1:
+            return True
+        elif privmsg_tags.get('subscriber', 0) == 1:
+            return True
+
     @irc3.event(irc3.rfc.PRIVMSG)
     @asyncio.coroutine
     def request_beatmap(self, tags=None, mask=None, target=None, data=None, **kw):
         if not target.is_channel or not data:
             return
-        if tags:
-            tags = tags.tagdict
-            # print(tags)
         try:
             options = BotOptions.objects.get(twitch_user__twitch_id=self.twitch_ids[str(target)])
         except BotOptions.DoesNotExist:
@@ -192,6 +205,14 @@ class Twitch:
             (r'https?://osu\.ppy\.sh/s/(?P<mapset_id>\d+)',
              self._request_mapset),
         ]
+        if options.subs_only:
+            self.bot.log.debug('[twitch] subs only mode is on')
+            if not tags:
+                self.bot.log.warn('[twitch] no IRCv3 tags in PRIVMSG, cannot check for subs only')
+                return
+            if not self._is_sub(tags.tagdict):
+                return
+            self.bot.log.debug('[twitch] - {} is a sub or mod'.format(mask.nick))
         for pattern, callback in patterns:
             m = re.match(pattern, data)
             if m:
