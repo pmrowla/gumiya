@@ -3,6 +3,8 @@ gumiya
 
 Osu! Twitch (+Bancho) chat bot.
 
+.. image:: https://travis-ci.org/pmrowla/gumiya.svg?branch=master
+    :target: https://travis-ci.org/pmrowla/gumiya
 .. image:: https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg
      :target: https://github.com/pydanny/cookiecutter-django/
      :alt: Built with Cookiecutter Django
@@ -21,13 +23,13 @@ Usage
 Features
 --------
 * Beatmap requests
+* PP info for requests via Tillerino
+* Optional subscribers only mode for map requests
 
 
 TODO
 ----
 * Stats command
-* Subs only mode
-* PP info for beatmap requests
 
 
 Rolling your own instance
