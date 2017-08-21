@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from django.contrib.sites.shortcuts import get_current_site
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -19,7 +20,10 @@ class TwitchApi(object):
 
     def __init__(self):
         self.session = requests.Session()
-        app = SocialApp.objects.get(provider='twitch')
+        try:
+            app = SocialApp.objects.get(provider='twitch')
+        except SocialApp.DoesNotExist:
+            app = SocialApp.objects.create(name='twitch', provider='twitch')
         self.session.headers.update({
             'Accept': 'application/vnd.twitchtv.v5+json',
             'Client-ID': app.client_id,

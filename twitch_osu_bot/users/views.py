@@ -58,7 +58,6 @@ class OsuUsernameView(LoginRequiredMixin, FormView):
                 res = self._action_unlink(request)
             res = res or HttpResponseRedirect(self.get_success_url())
         else:
-            print(request.POST)
             res = HttpResponseRedirect(self.get_success_url())
         return res
 
@@ -72,7 +71,6 @@ class OsuUsernameView(LoginRequiredMixin, FormView):
             pass
 
     def _action_unlink(self, request, *args, **kwargs):
-        print('unlink')
         username = request.POST.get('username')
         try:
             osu_username = OsuUsername.objects.get(user=request.user)

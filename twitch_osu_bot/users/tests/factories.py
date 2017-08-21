@@ -9,3 +9,11 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = 'users.User'
         django_get_or_create = ('username', )
+
+
+class OsuUsernameFactory(factory.django.DjangoModelFactory):
+    user = factory.SubFactory(UserFactory)
+    username = factory.Sequence(lambda n: 'osu-user-{}'.format(n))
+
+    class Meta:
+        model = 'users.OsuUsername'
