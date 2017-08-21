@@ -47,7 +47,7 @@ class Twitch:
 
     @irc3.event(irc3.rfc.CONNECTED)
     def connected(self, **kw):
-        self.bot.log.info('Connected to twitch as {}'.format(self.bot.nick))
+        self.bot.log.info('[twitch] Connected to twitch as {}'.format(self.bot.nick))
 
     @asyncio.coroutine
     def _get_pp(self, beatmap):
@@ -165,7 +165,7 @@ class Twitch:
             if not beatmaps:
                 return (None, None)
         except HTTPError as e:
-            self.bot.log.debug(e)
+            self.bot.log.debug('[twitch] {}'.format(e))
             return (None, None)
         try:
             beatmap = self.validate_beatmaps(beatmaps, options)[0]
@@ -248,12 +248,12 @@ class Twitch:
                 break
 
     def join(self, channel):
-        self.bot.log.info('Trying to join channel {}'.format(channel))
+        self.bot.log.info('[twitch] Trying to join channel {}'.format(channel))
         self.bot.join(channel)
         self.joined.add(channel)
 
     def part(self, channel):
-        self.bot.log.info('Leaving channel {}'.format(channel))
+        self.bot.log.info('[twitch] Leaving channel {}'.format(channel))
         self.bot.part(channel)
         if channel in self.joined:
             self.joined.remove(channel)
@@ -261,7 +261,7 @@ class Twitch:
     @asyncio.coroutine
     def join_live_channels(self):
         while not self.finished:
-            self.bot.log.debug('Checking for live streams')
+            self.bot.log.debug('[twitch] Checking for live streams')
             live = set()
             twitch_users = TwitchUser.objects.all_enabled_and_verified()
             if twitch_users.exists():
