@@ -190,6 +190,14 @@ class Twitch:
         elif privmsg_tags.get('subscriber', 0) == 1:
             return True
 
+    @asyncio.coroutine
+    def _request_beatmapsets(self, match, mask, target, options):
+        """Handle "new" osu web style beatmapsets links"""
+        if match.group('beatmap_id'):
+            return self._request_beatmap(match, mask, target, options)
+        else:
+            return self._request_mapset(match, mask, target, options)
+
     @irc3.event(irc3.rfc.PRIVMSG)
     @asyncio.coroutine
     def request_beatmap(self, tags=None, mask=None, target=None, data=None, **kw):
@@ -204,6 +212,8 @@ class Twitch:
              self._request_beatmap),
             (r'https?://osu\.ppy\.sh/s/(?P<mapset_id>\d+)',
              self._request_mapset),
+            (r'https?://osu\.ppy\.sh/beatmapsets/(?P<mapset_id>\d+)(#(?P<mode>\w+))?(/(?P<beatmap_id>\d+))?',
+             self._request_beatmapsets),
         ]
         if options.subs_only:
             self.bot.log.debug('[twitch] subs only mode is on')
