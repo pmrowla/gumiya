@@ -282,12 +282,12 @@ class Twitch:
                         channel = '#{}'.format(name)
                         self.twitch_ids[channel] = twitch_id
                         live.add(channel)
-                joins = live.difference(self.joined)
-                parts = self.joined.difference(live)
-                for channel in joins:
-                    self.join(channel)
-                for channel in parts:
-                    self.part(channel)
-                    if channel in self.twitch_ids:
-                        del self.twitch_ids[channel]
+            joins = live.difference(self.joined)
+            parts = self.joined.difference(live)
+            for channel in joins:
+                self.join(channel)
+            for channel in parts:
+                self.part(channel)
+                if channel in self.twitch_ids:
+                    del self.twitch_ids[channel]
             yield from asyncio.sleep(30)
