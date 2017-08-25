@@ -5,3 +5,5 @@ before_install:
   - docker-compose -f dev.yml build
 script:
   - docker-compose -f dev.yml run django python manage.py test
+notifications:
+  email: false
