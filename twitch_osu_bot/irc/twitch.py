@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import asyncio
 
 import irc3
+from irc3.plugins.command import command
 
 from osuapi import OsuApi, AHConnector
 
@@ -172,3 +173,12 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                 if channel in self.osu_nicks:
                     del self.osu_nicks[channel]
             yield from asyncio.sleep(30)
+
+    @command
+    @asyncio.coroutine
+    def stats(self, mask, target, args):
+        """Check stats for an osu! player
+
+            %%stats <username>...
+        """
+        yield from super(GumiyaTwitchPlugin, self).stats(mask, target, args)
