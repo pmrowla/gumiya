@@ -74,3 +74,9 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Your local stuff: Below this line define 3rd party library settings
 # ------------------------------------------------------------------------------
+
+# If DEBUG_USERNAME is set the bot will always join the twitch channel
+# for the specified user regardless of whether or not it is live
+# (useful for testing purposes). Note that the specified user must exist and
+# have a linked twitch channel.
+DEBUG_USERNAME = env('DEBUG_USERNAME', default='')

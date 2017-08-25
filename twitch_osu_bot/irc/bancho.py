@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-twitch_osu_bot Bancho (osu!) irc3 plugin.
+Gumiya Bancho (osu!) irc3 plugin.
 """
 from __future__ import absolute_import, unicode_literals
-
-import asyncio
 
 import irc3
 from irc3.plugins.command import command
 from irc3.plugins.cron import cron
 
 from django.contrib.sites.shortcuts import get_current_site
+
+from gumiyabot.bancho import BaseBanchoPlugin
 
 from ..users.models import OsuUsername, OsuUsernameConfirmation
 
@@ -32,22 +32,14 @@ class BanchoConnection(irc3.IrcConnection):
 
 
 @irc3.plugin
-class Bancho:
+class GumiyaBanchoPlugin(BaseBanchoPlugin):
 
     def __init__(self, bot):
-        self.bot = bot
-        self.bancho_queue = self.bot.config.get('bancho_queue')
-        asyncio.ensure_future(self.get_bancho_msg())
+        super(GumiyaBanchoPlugin, self).__init__(bot)
 
     @irc3.event(irc3.rfc.CONNECTED)
     def connected(self, **kw):
         self.bot.log.info('[bancho] Connected to bancho as {}'.format(self.bot.nick))
-
-    @asyncio.coroutine
-    def get_bancho_msg(self):
-        while True:
-            (target, msg) = yield from self.bancho_queue.get()
-            self.bot.privmsg(target, msg)
 
     @command(public=False)
     def verify(self, mask, target, args):

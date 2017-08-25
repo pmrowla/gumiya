@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 
 import irc3
 
-from twitch_osu_bot.irc.bancho import BanchoConnection
+from gumiyabot.bancho import BanchoConnection
 
 
 class Command(BaseCommand):
@@ -56,6 +56,9 @@ class Command(BaseCommand):
             bancho_nick=settings.BANCHO_USERNAME,
         )
         twitch_config.update(config_common)
+
+        if settings.DEBUG:
+            twitch_config['debug_username'] = settings.DEBUG_USERNAME
 
         bancho_config = dict(
             host='irc.ppy.sh',

@@ -5,25 +5,20 @@ twitch_osu_bot Twitch chat irc3 plugin.
 from __future__ import unicode_literals
 
 import asyncio
-import re
 
 import irc3
 
 from osuapi import OsuApi, AHConnector
-from osuapi.errors import HTTPError
+
+from gumiyabot.twitch import BaseTwitchPlugin, BeatmapValidationError
+from gumiyabot.utils import TillerinoApi
 
 from ..streams.models import BotOptions, TwitchUser
-from ..utils import TillerinoApi, TwitchApi
-
-
-class BeatmapValidationError(Exception):
-
-    def __init__(self, reason):
-        self.reason = reason
+from ..utils import TwitchApi
 
 
 @irc3.plugin
-class Twitch:
+class GumiyaTwitchPlugin(BaseTwitchPlugin):
 
     def __init__(self, bot):
         self.bot = bot
@@ -36,6 +31,7 @@ class Twitch:
         self.tillerino = TillerinoApi(self.bot.config.get('tillerino_api_key'))
         self.joined = set()
         self.twitch_ids = {}
+        self.osu_nicks = {}
         self.finished = False
 
     def server_ready(self):
@@ -47,22 +43,10 @@ class Twitch:
 
     @irc3.event(irc3.rfc.CONNECTED)
     def connected(self, **kw):
+        # Override connected() since we don't use default twitch_channel
         self.bot.log.info('[twitch] Connected to twitch as {}'.format(self.bot.nick))
 
-    @asyncio.coroutine
-    def _get_pp(self, beatmap):
-        data = self.tillerino.beatmapinfo(beatmap.beatmap_id)
-        if data:
-            pp = {}
-            for entry in data['ppForAcc']['entry']:
-                pp[float(entry['key'])] = float(entry['value'])
-            if pp:
-                beatmap.pp = pp
-                return pp
-        beatmap.pp = None
-        return None
-
-    def validate_beatmaps(self, beatmaps, options):
+    def validate_beatmaps(self, beatmaps, options=None, **kwargs):
         valid_beatmaps = []
         if len(beatmaps) > 1:
             mapset = True
@@ -117,104 +101,15 @@ class Twitch:
             raise BeatmapValidationError(reason)
         return valid_beatmaps
 
-    @asyncio.coroutine
-    def _beatmap_msg(self, beatmap):
-        msg = '[{}] {} - {} [{}] (by {}), ♫ {:g}, ★ {:.2f}'.format(
-            beatmap.approved.name.capitalize(),
-            beatmap.artist,
-            beatmap.title,
-            beatmap.version,
-            beatmap.creator,
-            beatmap.bpm,
-            round(beatmap.difficultyrating, 2),
-        )
-        pp = yield from self._get_pp(beatmap)
-        if pp:
-            msg = ' | '.join([
-                msg,
-                '95%: {}pp'.format(round(pp[.95])),
-                '98%: {}pp'.format(round(pp[.98])),
-                '100%: {}pp'.format(round(pp[1.0])),
-            ])
-        return msg
-
-    @asyncio.coroutine
-    def _request_mapset(self, match, mask, target, options):
-        try:
-            mapset = yield from self.osu.get_beatmaps(
-                beatmapset_id=match.group('mapset_id'),
-                include_converted=0)
-            if not mapset:
-                return (None, None)
-            mapset = sorted(mapset, key=lambda x: x.difficultyrating)
-        except HTTPError:
-            return (None, None)
-        try:
-            beatmap = self.validate_beatmaps(mapset, options)[-1]
-        except BeatmapValidationError as e:
-            return (None, e.reason)
-        msg = yield from self._beatmap_msg(beatmap)
-        return (beatmap, msg)
-
-    @asyncio.coroutine
-    def _request_beatmap(self, match, mask, target, options):
-        try:
-            beatmaps = yield from self.osu.get_beatmaps(
-                beatmap_id=match.group('beatmap_id'),
-                include_converted=0)
-            if not beatmaps:
-                return (None, None)
-        except HTTPError as e:
-            self.bot.log.debug('[twitch] {}'.format(e))
-            return (None, None)
-        try:
-            beatmap = self.validate_beatmaps(beatmaps, options)[0]
-        except BeatmapValidationError as e:
-            return (None, e.reason)
-        msg = yield from self._beatmap_msg(beatmap)
-        return (beatmap, msg)
-
-    def _badge_list(self, badges):
-        b_list = []
-        for x in badges.split(','):
-            (badge, version) = x.split('/', 1)
-            b_list.append(badge)
-        return b_list
-
-    def _is_sub(self, privmsg_tags):
-        badges = self._badge_list(privmsg_tags.get('badges', ''))
-        if any(b in badges for b in ['broadcaster', 'moderator', 'subscriber']):
-            return True
-        elif privmsg_tags.get('mod', 0) == 1:
-            return True
-        elif privmsg_tags.get('subscriber', 0) == 1:
-            return True
-
-    @asyncio.coroutine
-    def _request_beatmapsets(self, match, mask, target, options):
-        """Handle "new" osu web style beatmapsets links"""
-        if match.group('beatmap_id'):
-            return self._request_beatmap(match, mask, target, options)
-        else:
-            return self._request_mapset(match, mask, target, options)
-
     @irc3.event(irc3.rfc.PRIVMSG)
     @asyncio.coroutine
-    def request_beatmap(self, tags=None, mask=None, target=None, data=None, **kw):
+    def request_beatmap(self, tags=None, mask=None, target=None, data=None, **kwargs):
         if not target.is_channel or not data:
             return
         try:
             options = BotOptions.objects.get(twitch_user__twitch_id=self.twitch_ids[str(target)])
         except BotOptions.DoesNotExist:
             return
-        patterns = [
-            (r'https?://osu\.ppy\.sh/b/(?P<beatmap_id>\d+)',
-             self._request_beatmap),
-            (r'https?://osu\.ppy\.sh/s/(?P<mapset_id>\d+)',
-             self._request_mapset),
-            (r'https?://osu\.ppy\.sh/beatmapsets/(?P<mapset_id>\d+)(#(?P<mode>\w+))?(/(?P<beatmap_id>\d+))?',
-             self._request_beatmapsets),
-        ]
         if options.subs_only:
             self.bot.log.debug('[twitch] subs only mode is on')
             if not tags:
@@ -223,39 +118,9 @@ class Twitch:
             if not self._is_sub(tags.tagdict):
                 return
             self.bot.log.debug('[twitch] - {} is a sub or mod'.format(mask.nick))
-        for pattern, callback in patterns:
-            m = re.match(pattern, data)
-            if m:
-                (beatmap, msg) = yield from callback(m, mask, target, options)
-                if beatmap:
-                    m, s = divmod(beatmap.total_length, 60)
-                    bancho_msg = ' '.join([
-                        '{} >'.format(mask.nick),
-                        '[http://osu.ppy.sh/b/{} {} - {} [{}]]'.format(
-                            beatmap.beatmap_id,
-                            beatmap.artist,
-                            beatmap.title,
-                            beatmap.version,
-                        ),
-                        '{}:{:02d} ★ {:.2f} ♫ {:g} AR{:g} OD{:g}'.format(
-                            m, s,
-                            round(beatmap.difficultyrating, 2),
-                            beatmap.bpm,
-                            round(beatmap.diff_approach, 1),
-                            round(beatmap.diff_overall, 1),
-                        ),
-                    ])
-                    if beatmap.pp:
-                        bancho_msg = ' | '.join([
-                            bancho_msg,
-                            '95%: {}pp'.format(round(beatmap.pp[.95])),
-                            '98%: {}pp'.format(round(beatmap.pp[.98])),
-                            '100%: {}pp'.format(round(beatmap.pp[1.0])),
-                        ])
-                    yield from self.bancho_queue.put((self.bancho_nick, bancho_msg))
-                if msg:
-                    self.bot.privmsg(target, msg)
-                break
+        return super(GumiyaTwitchPlugin, self).request_beatmap(
+            tags=tags, mask=mask, target=target, data=data, options=options,
+            bancho_target=self.osu_nicks[str(target)], **kwargs)
 
     def join(self, channel):
         self.bot.log.info('[twitch] Trying to join channel {}'.format(channel))
@@ -281,7 +146,21 @@ class Twitch:
                         twitch_id = stream['channel']['_id']
                         channel = '#{}'.format(name)
                         self.twitch_ids[channel] = twitch_id
+                        osu_username = TwitchUser.osu_username_for_twitch_id(twitch_id)
+                        self.osu_nicks[channel] = osu_username.username
                         live.add(channel)
+            if self.bot.config.get('debug'):
+                debug_username = self.bot.config.get('debug_username')
+                if debug_username:
+                    try:
+                        twitch_user = TwitchUser.objects.get(user__username=debug_username)
+                        channel = '#{}'.format(debug_username)
+                        self.twitch_ids[channel] = twitch_user.twitch_id
+                        osu_username = TwitchUser.osu_username_for_twitch_id(twitch_user.twitch_id)
+                        self.osu_nicks[channel] = osu_username.username
+                        live.add(channel)
+                    except TwitchUser.DoesNotExist:
+                        self.bot.log.debug('[twitch] debug user does not exist')
             joins = live.difference(self.joined)
             parts = self.joined.difference(live)
             for channel in joins:
@@ -290,4 +169,6 @@ class Twitch:
                 self.part(channel)
                 if channel in self.twitch_ids:
                     del self.twitch_ids[channel]
+                if channel in self.osu_nicks:
+                    del self.osu_nicks[channel]
             yield from asyncio.sleep(30)

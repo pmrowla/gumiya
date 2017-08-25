@@ -16,7 +16,7 @@ from osuapi.enums import BeatmapStatus
 from ..utils import TwitchApi
 from .managers import TwitchUserManager
 
-from ..users.models import User
+from ..users.models import OsuUsername, User
 
 
 @python_2_unicode_compatible
@@ -50,6 +50,16 @@ class TwitchUser(models.Model):
             twitch_user.logo = data['logo']
             twitch_user.save()
         return twitch_user
+
+    @classmethod
+    def osu_username_for_twitch_id(cls, twitch_id):
+        try:
+            twitch_user = TwitchUser.objects.get(twitch_id=twitch_id)
+            osu_username = OsuUsername.objects.get(user=twitch_user.user)
+            return osu_username
+        except (TwitchUser.DoesNotExist, OsuUsername.DoesNotExist):
+            pass
+        return None
 
 
 @python_2_unicode_compatible
