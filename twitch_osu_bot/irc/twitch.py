@@ -9,6 +9,8 @@ import asyncio
 import irc3
 from irc3.plugins.command import command
 
+from requests.exceptions import RequestException
+
 from osuapi import OsuApi, AHConnector
 
 from gumiyabot.twitch import BaseTwitchPlugin, BeatmapValidationError
@@ -141,8 +143,13 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
             live = set()
             twitch_users = TwitchUser.objects.all_enabled_and_verified()
             if twitch_users.exists():
-                for stream in self.twitch.get_live_streams(twitch_users=twitch_users):
-                    if stream:
+                try:
+                    live_streams = self.twitch.get_live_streams(twitch_users=twitch_users)
+                except RequestException as e:
+                    self.bot.log.warn('[twitch] error fetching live streams from twitch: {}'.format(e))
+                    live_streams = []
+                for stream in live_streams:
+                    if stream and stream['channel']['game'] == 'osu!':
                         name = stream['channel']['name']
                         twitch_id = stream['channel']['_id']
                         channel = '#{}'.format(name)
