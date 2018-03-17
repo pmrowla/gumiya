@@ -186,6 +186,6 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
     def stats(self, mask, target, args):
         """Check stats for an osu! player
 
-            %%stats <username>...
+            %%stats [<username>]...
         """
-        yield from super(GumiyaTwitchPlugin, self).stats(mask, target, args)
+        yield from super(GumiyaTwitchPlugin, self).stats(mask, target, args, default_user=self.osu_nicks[str(target)])
