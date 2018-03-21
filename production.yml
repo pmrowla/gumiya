@@ -11,6 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - postgres_backup:/backups
     env_file: .env
+    restart: on-failure
 
   django:
     build:
@@ -21,6 +22,7 @@ services:
       - redis
     command: /gunicorn.sh
     env_file: .env
+    restart: on-failure
 
   irc:
     build:
@@ -51,6 +53,7 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/lib/letsencrypt:/var/lib/letsencrypt
+    restart: on-failure
 
   certbot:
     image: quay.io/letsencrypt/letsencrypt
@@ -67,3 +70,4 @@ services:
 
   redis:
     image: redis:3.0
+    restart: on-failure
