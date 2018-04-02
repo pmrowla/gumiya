@@ -28,7 +28,7 @@ Help
 * Submit bug/feature requests via github issues (please check to see if your issue has already been posted first).
 * For other generic help requests please try to refrain from cluttering up the github issues list and just ask in `discord`_.
 
-.. _'FAQ': https://github.com/pmrowla/gumiya/wiki/FAQ
+.. _`FAQ`: https://github.com/pmrowla/gumiya/wiki/FAQ
 .. _`discord`: https://discord.gg/JDZhNPG
 
 
