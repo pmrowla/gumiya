@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - postgres_backup:/backups
     env_file: .env
-    restart: on-failure
+    restart: always
 
   django:
     build:
@@ -22,7 +22,7 @@ services:
       - redis
     command: /gunicorn.sh
     env_file: .env
-    restart: on-failure
+    restart: always
 
   irc:
     build:
@@ -33,13 +33,12 @@ services:
       - django
     command: python /app/manage.py ircbot
     env_file: .env
-    restart: on-failure
+    restart: always
 
   nginx:
     build: ./compose/nginx
     depends_on:
       - django
-
       - certbot
 
     ports:
@@ -53,7 +52,7 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/lib/letsencrypt:/var/lib/letsencrypt
-    restart: on-failure
+    restart: always
 
   certbot:
     image: quay.io/letsencrypt/letsencrypt
@@ -70,4 +69,4 @@ services:
 
   redis:
     image: redis:3.0
-    restart: on-failure
+    restart: always
