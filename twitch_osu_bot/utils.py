@@ -26,9 +26,9 @@ class TwitchApi(object):
             except SocialApp.DoesNotExist:
                 app = SocialApp.objects.create(name='twitch', provider='twitch')
             self.headers = {
-                'Accept': 'application/vnd.twitchtv.v5+json',
                 'Client-ID': app.client_id,
             }
+        self.headers['Accept'] = 'application/vnd.twitchtv.v5+json'
 
     @classmethod
     def from_user(cls, user):
