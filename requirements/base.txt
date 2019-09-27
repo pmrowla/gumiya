@@ -6,7 +6,7 @@ wheel==0.33.1
 
 
 # Bleeding edge Django
-django==2.1.7 # pyup: >=1.10,<1.11
+django>=2.1.11,<2.2 # pyup: >=1.10,<1.11
 
 # Configuration
 django-environ==0.4.5
@@ -28,7 +28,7 @@ argon2-cffi==19.1.0
 
 # For user registration, either via email or social
 # Well-built with regular release cycles!
-django-allauth==0.39.1
+django-allauth==0.40.0
 
 
 # Python-PostgreSQL Database Adapter
