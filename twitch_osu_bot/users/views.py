@@ -31,6 +31,11 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
     permanent = False
 
     def get_redirect_url(self):
+        try:
+            user = User.objects.get(username=self.request.user.username)
+            TwitchUser.update_or_create(user)
+        except ObjectDoesNotExist:
+            pass
         return reverse('users:detail')
 
 
