@@ -28,7 +28,8 @@ argon2-cffi==19.1.0
 
 # For user registration, either via email or social
 # Well-built with regular release cycles!
-django-allauth==0.40.0
+# django-allauth==0.41.0
+git+git://github.com/pennersr/django-allauth.git@559b73a455d5ad829d724d0299ebe1cbcf5c4096
 
 
 # Python-PostgreSQL Database Adapter
