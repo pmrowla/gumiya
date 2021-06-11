@@ -3,8 +3,8 @@ gumiya
 
 Twitch + Bancho chat bot for handling osu! related functions.
 
-.. image:: https://travis-ci.org/pmrowla/gumiya.svg?branch=master
-    :target: https://travis-ci.org/pmrowla/gumiya
+.. image:: https://travis-ci.com/pmrowla/gumiya.svg?branch=master
+    :target: https://travis-ci.com/pmrowla/gumiya
 .. image:: https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg
      :target: https://github.com/pydanny/cookiecutter-django/
      :alt: Built with Cookiecutter Django
