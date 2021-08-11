@@ -50,7 +50,7 @@ class GumiyaBanchoPlugin(BaseBanchoPlugin):
         self.bot.log.debug('[bancho] verify {} {} {}'.format(mask, target, args))
         username = mask.nick
         key = args.get('<verification_code>')
-        self.bot.log.debug('[bancho] New verification request from {}: {}'.format(username, key))
+        self.bot.log.info('[bancho] New verification request from {}: {}'.format(username, key))
 
         try:
             osu_username = OsuUsername.objects.get(username=username)

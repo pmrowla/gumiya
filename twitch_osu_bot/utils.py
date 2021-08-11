@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import logging
+
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -8,14 +10,15 @@ from allauth.socialaccount.models import SocialApp, SocialToken
 
 import requests
 
+logger = logging.getLogger(__name__)
+
 
 class TwitchApi(object):
 
     # API endpoints
-    API_BASE = 'https://api.twitch.tv/kraken'
-    GET_USER = '/'.join((API_BASE, 'user'))
+    API_BASE = 'https://api.twitch.tv/helix'
+    GET_USERS = '/'.join((API_BASE, 'users'))
     GET_LIVE_STREAMS = '/'.join((API_BASE, 'streams'))
-    GET_STREAM_BY_USER = '/'.join((GET_LIVE_STREAMS, '{channel_id}'))
 
     def __init__(self, headers={}):
         if headers:
@@ -29,6 +32,23 @@ class TwitchApi(object):
                 'Client-ID': app.client_id,
             }
         self.headers['Accept'] = 'application/vnd.twitchtv.v5+json'
+        self._app_token = None
+
+    @property
+    def app_token(self):
+        if self._app_token is None:
+            app = SocialApp.objects.get(provider='twitch')
+            url = "https://id.twitch.tv/oauth2/token"
+            params = {
+                "client_id": app.client_id,
+                "client_secret": app.secret,
+                "grant_type": "client_credentials",
+            }
+            with self._session() as s:
+                r = s.post(url, params=params)
+                if r.status_code == 200:
+                    self._app_token = r.json().get("access_token")
+        return self._app_token
 
     @classmethod
     def from_user(cls, user):
@@ -37,7 +57,7 @@ class TwitchApi(object):
             if token.expires_at is None or token.expires_at > timezone.now():
                 headers = {
                     'Client-ID': token.app.client_id,
-                    'Authorization': 'OAuth {}'.format(token.token),
+                    'Authorization': 'Bearer {}'.format(token.token),
                 }
         return cls(headers=headers)
 
@@ -46,62 +66,46 @@ class TwitchApi(object):
             if k in d:
                 d[k] = parse_datetime(d[k])
 
-    def _session(self):
+    def _session(self, headers={}):
         s = requests.Session()
         s.headers.update(self.headers)
+        s.headers.update(headers)
         return s
 
     def get_user(self):
         """Fetch details for the specified user from the Twitch API."""
         with self._session() as s:
-            r = s.get(self.GET_USER)
+            r = s.get(self.GET_USERS)
             if r.status_code == 200:
-                twitch_user = r.json()
+                twitch_user = r.json().get("data", [])[0]
                 self._parse_timestamps(twitch_user, ['created_at', 'updated_at'])
                 return twitch_user
         return None
 
-    def get_stream_by_user(self, twitch_user, stream_type=None):
-        url = self.GET_STREAM_BY_USER.format(channel_id=twitch_user.twitch_id)
-        if stream_type in ['live', 'playlist', 'all']:
-            params = {'stream_type': stream_type}
-        else:
-            params = {}
-        with self._session() as s:
-            r = s.get(url, params=params)
-            if r.status_code == 200:
-                twitch_stream = r.json()
-                return twitch_stream.get('stream')
-        return None
-
-    def get_live_streams(self, twitch_users=[], game=None, language=None, stream_type=None):
+    def get_live_streams(self, twitch_users=[], game_id=None, language=None):
         url = self.GET_LIVE_STREAMS
         params = {}
-        if game:
-            params['game'] = game
+        if game_id:
+            params['game_id'] = game_id
         if language:
             params['language'] = language
-        if stream_type in ['live', 'playlist', 'all']:
-            params['stream_type'] = stream_type
+        token = self.app_token
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
         if not twitch_users:
-            with self._session() as s:
+            with self._session(headers=headers) as s:
                 r = s.get(url, params=params)
                 if r.status_code == 200:
-                    twitch_streams = r.json()
-                    if 'streams' in twitch_streams:
-                        return twitch_streams['streams']
+                    return r.json().get("data", [])
             return []
         else:
             # Twitch will only return a maximum of 100 results, if we need more
             # than that we must combine multiple requests
-            params['limit'] = 100
+            query = "first=100&"
             streams = []
             for channels in [twitch_users[i:i + 100] for i in range(0, len(twitch_users), 100)]:
-                params['channel'] = ','.join(map(lambda x: str(x.twitch_id), channels))
-                with self._session() as s:
-                    r = s.get(url, params=params)
+                query += "&".join(f"user_id={channel.twitch_id}" for channel in channels)
+                with self._session(headers=headers) as s:
+                    r = s.get(f"{url}?{query}")
                     if r.status_code == 200:
-                        twitch_streams = r.json()
-                        if 'streams' in twitch_streams:
-                            streams.extend(twitch_streams['streams'])
+                        streams.extend(r.json().get("data", []))
             return streams

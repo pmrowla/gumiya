@@ -149,9 +149,9 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                     self.bot.log.warn('[twitch] error fetching live streams from twitch: {}'.format(e))
                     live_streams = []
                 for stream in live_streams:
-                    if stream and stream['channel']['game'] == 'osu!':
-                        name = stream['channel']['name']
-                        twitch_id = stream['channel']['_id']
+                    if stream and stream['game_name'] == 'osu!':
+                        name = stream['user_login']
+                        twitch_id = stream['user_id']
                         channel = '#{}'.format(name)
                         self.twitch_ids[channel] = twitch_id
                         osu_username = TwitchUser.osu_username_for_twitch_id(twitch_id)

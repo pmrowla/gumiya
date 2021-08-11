@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import logging
 import re
 
 from django.db import models
@@ -17,6 +18,8 @@ from ..utils import TwitchApi
 from .managers import TwitchUserManager
 
 from ..users.models import OsuUsername, User
+
+logger = logging.getLogger(__name__)
 
 
 @python_2_unicode_compatible
@@ -38,16 +41,16 @@ class TwitchUser(models.Model):
         api = TwitchApi.from_user(user)
         data = api.get_user()
         if not data:
-            return None
+            raise ValueError(f"no twitch API data for user {user}")
         try:
-            twitch_user = cls.objects.get(user=user, twitch_id=data['_id'])
+            twitch_user = cls.objects.get(user=user, twitch_id=data['id'])
         except cls.DoesNotExist:
-            twitch_user = cls(user=user, twitch_id=data['_id'])
+            twitch_user = cls(user=user, twitch_id=data['id'])
         if twitch_user.user.username != data['display_name']:
             twitch_user.user.username = data['display_name']
             twitch_user.user.save()
-        if twitch_user.logo != data['logo']:
-            twitch_user.logo = data['logo']
+        if twitch_user.logo != data['profile_image_url']:
+            twitch_user.logo = data['profile_image_url']
             twitch_user.save()
         return twitch_user
 
