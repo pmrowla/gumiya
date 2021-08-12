@@ -9,9 +9,15 @@ from .models import OsuUsername
 
 class SetOsuUsernameForm(UserForm):
 
-    username = forms.CharField(label=_('Osu! username'),
-                               max_length=255,
-                               required=True)
+    username = forms.CharField(
+        label=_('Osu! username'),
+        max_length=255,
+        required=True,
+        help_text=(
+            'Usernames are case sensitive, capitalization must match the way your username is displayed in in-game '
+            'chat. Spaces in your username should be replaced with underscores (_).'
+        ),
+    )
 
     def clean_username(self):
         value = self.cleaned_data['username']
