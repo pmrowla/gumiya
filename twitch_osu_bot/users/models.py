@@ -45,6 +45,11 @@ class OsuUsername(models.Model):
                    '{} (verification key will expire in 15 minutes): '
                    '!verify {}'.format(settings.BANCHO_USERNAME, confirmation.key))
             messages.info(request, msg)
+            msg = (
+                f'Verification system is currently unreliable, if {settings.BANCHO_USERNAME} does not respond '
+                'to your !verify command, PM pmrowla in-game with your twitch channel name to get manually verified.'
+            )
+            messages.warning(request, msg)
         return confirmation
 
     def change(self, request, new_username, message=False):
