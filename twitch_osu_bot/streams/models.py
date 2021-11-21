@@ -6,7 +6,6 @@ import re
 
 from django.db import models
 from django.core.validators import (
-    MaxValueValidator,
     MinValueValidator,
     RegexValidator)
 from django.utils.encoding import python_2_unicode_compatible
@@ -84,11 +83,11 @@ class BotOptions(models.Model):
         max_length=64)
     beatmap_min_stars = models.FloatField(
         _('minimum allowed stars for beatmap requests'),
-        validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
+        validators=[MinValueValidator(0.0)],
         default=0.0)
     beatmap_max_stars = models.FloatField(
         _('maximum allowed stars for beatmap requests'),
-        validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
+        validators=[MinValueValidator(0.0)],
         default=10.0)
 
     @property
