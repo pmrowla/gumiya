@@ -6,7 +6,6 @@ from django.db.models import Q
 
 
 class TwitchUserManager(models.Manager):
-
     def enabled_and_verified_q(self):
         return Q(bot_options__enabled=True, user__osu_username__verified=True)
 

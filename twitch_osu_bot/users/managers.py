@@ -6,7 +6,6 @@ from django.utils import timezone
 
 
 class OsuUsernameManager(models.Manager):
-
     def set_username(self, request, user, username, message=False):
         try:
             osu_username = self.get(user=user)
@@ -19,7 +18,6 @@ class OsuUsernameManager(models.Manager):
 
 
 class OsuUsernameConfirmationManager(models.Manager):
-
     def all_expired(self):
         return self.filter(self.expired_q())
 
