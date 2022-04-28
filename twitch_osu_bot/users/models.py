@@ -8,6 +8,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from . import signals
@@ -46,10 +47,11 @@ class OsuUsername(models.Model):
                    '!verify {}'.format(settings.BANCHO_USERNAME, confirmation.key))
             messages.info(request, msg)
             msg = (
-                f'Verification system is currently unreliable, if {settings.BANCHO_USERNAME} does not respond '
-                'to your !verify command, PM pmrowla in-game with your twitch channel name to get manually verified.'
+                'If you have problems getting verified first '
+                '<a href="https://github.com/pmrowla/gumiya/wiki/FAQ#i-cant-verify-my-osu-account">check the FAQ</a>. '
+                'If you have checked the FAQ and still cannot be verified, PM pmrowla in-game.'
             )
-            messages.warning(request, msg)
+            messages.warning(request, mark_safe(msg))
         return confirmation
 
     def change(self, request, new_username, message=False):
