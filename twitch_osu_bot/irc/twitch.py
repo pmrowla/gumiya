@@ -5,6 +5,7 @@ twitch_osu_bot Twitch chat irc3 plugin.
 import asyncio
 
 import irc3
+from asgiref.sync import sync_to_async
 from gumiyabot.twitch import BaseTwitchPlugin, BeatmapValidationError
 from gumiyabot.utils import TillerinoApi
 from irc3.plugins.command import command
@@ -111,12 +112,13 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         return valid_beatmaps
 
     @irc3.event(irc3.rfc.PRIVMSG)
-    @asyncio.coroutine
-    def request_beatmap(self, tags=None, mask=None, target=None, data=None, **kwargs):
+    async def request_beatmap(
+        self, tags=None, mask=None, target=None, data=None, **kwargs
+    ):
         if not target.is_channel or not data:
             return
         try:
-            options = BotOptions.objects.get(
+            options = await sync_to_async(BotOptions.objects.get)(
                 twitch_user__twitch_id=self.twitch_ids[str(target)]
             )
         except BotOptions.DoesNotExist:
@@ -131,14 +133,14 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
             if not self._is_sub(tags.tagdict):
                 return
             self.bot.log.debug("[twitch] - {} is a sub or mod".format(mask.nick))
-        return super(GumiyaTwitchPlugin, self).request_beatmap(
+        return await super().request_beatmap(
             tags=tags,
             mask=mask,
             target=target,
             data=data,
             options=options,
             bancho_target=self.osu_nicks[str(target)],
-            **kwargs
+            **kwargs,
         )
 
     def join(self, channel):
@@ -152,20 +154,19 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         if channel in self.joined:
             self.joined.remove(channel)
 
-    @asyncio.coroutine
-    def join_live_channels(self):
+    async def join_live_channels(self):
         while not self.finished:
             self.bot.log.debug("[twitch] Checking for live streams")
             live = set()
             twitch_users = TwitchUser.objects.all_enabled_and_verified()
-            if twitch_users.exists():
+            if await sync_to_async(twitch_users.exists)():
                 try:
-                    live_streams = self.twitch.get_live_streams(
+                    live_streams = await sync_to_async(self.twitch.get_live_streams)(
                         twitch_users=twitch_users
                     )
                 except RequestException as e:
                     self.bot.log.warn(
-                        "[twitch] error fetching live streams from twitch: {}".format(e)
+                        f"[twitch] error fetching live streams from twitch: {e}"
                     )
                     live_streams = []
                 for stream in live_streams:
@@ -174,21 +175,23 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                         twitch_id = stream["user_id"]
                         channel = "#{}".format(name)
                         self.twitch_ids[channel] = twitch_id
-                        osu_username = TwitchUser.osu_username_for_twitch_id(twitch_id)
+                        osu_username = await sync_to_async(
+                            TwitchUser.osu_username_for_twitch_id
+                        )(twitch_id)
                         self.osu_nicks[channel] = osu_username.username
                         live.add(channel)
             if self.bot.config.get("debug"):
                 debug_username = self.bot.config.get("debug_username")
                 if debug_username:
                     try:
-                        twitch_user = TwitchUser.objects.get(
+                        twitch_user = await sync_to_async(TwitchUser.objects.get)(
                             user__username=debug_username
                         )
                         channel = "#{}".format(debug_username)
                         self.twitch_ids[channel] = twitch_user.twitch_id
-                        osu_username = TwitchUser.osu_username_for_twitch_id(
-                            twitch_user.twitch_id
-                        )
+                        osu_username = await sync_to_async(
+                            TwitchUser.osu_username_for_twitch_id
+                        )(twitch_user.twitch_id)
                         self.osu_nicks[channel] = osu_username.username
                         live.add(channel)
                     except TwitchUser.DoesNotExist:
@@ -203,15 +206,14 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                     del self.twitch_ids[channel]
                 if channel in self.osu_nicks:
                     del self.osu_nicks[channel]
-            yield from asyncio.sleep(30)
+            await asyncio.sleep(30)
 
     @command
-    @asyncio.coroutine
-    def stats(self, mask, target, args):
+    async def stats(self, mask, target, args):
         """Check stats for an osu! player
 
         %%stats [<username>]...
         """
-        yield from super(GumiyaTwitchPlugin, self).stats(
+        return await super().stats(
             mask, target, args, default_user=self.osu_nicks[str(target)]
         )
