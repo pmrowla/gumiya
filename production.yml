@@ -1,14 +1,14 @@
 version: '2'
 
 volumes:
-  postgres_data: {}
+  postgres_13_data: {}
   postgres_backup: {}
 
 services:
   postgres:
     build: ./compose/postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_13_data:/var/lib/postgresql/data
       - postgres_backup:/backups
     env_file: .env
     restart: always
@@ -40,10 +40,6 @@ services:
     depends_on:
       - django
       - certbot
-
-    ports:
-      - "0.0.0.0:80:80"
-
     environment:
       - MY_DOMAIN_NAME=gumiya.pmrowla.com
     ports:
@@ -68,5 +64,5 @@ services:
       - TERM=xterm
 
   redis:
-    image: redis:3.0
+    image: redis:7.0
     restart: always
