@@ -2,8 +2,6 @@
 """
 twitch_osu_bot Twitch chat irc3 plugin.
 """
-from __future__ import unicode_literals
-
 import asyncio
 
 import irc3

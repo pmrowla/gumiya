@@ -7,7 +7,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -15,13 +14,11 @@ from . import signals
 from .managers import OsuUsernameConfirmationManager, OsuUsernameManager
 
 
-@python_2_unicode_compatible
 class User(AbstractUser):
     def __str__(self):
         return self.username
 
 
-@python_2_unicode_compatible
 class OsuUsername(models.Model):
 
     user = models.OneToOneField(
@@ -36,7 +33,7 @@ class OsuUsername(models.Model):
     objects = OsuUsernameManager()
 
     def __str__(self):
-        return "{} ({})".format(self.username, self.user)
+        return f"{self.username} ({self.user})"
 
     def send_confirmation(self, request=None, message=False):
         confirmation = OsuUsernameConfirmation.create(self)
@@ -68,7 +65,6 @@ class OsuUsername(models.Model):
             self.send_confirmation(request, message=message)
 
 
-@python_2_unicode_compatible
 class OsuUsernameConfirmation(models.Model):
 
     osu_username = models.ForeignKey(
@@ -80,7 +76,7 @@ class OsuUsernameConfirmation(models.Model):
     objects = OsuUsernameConfirmationManager()
 
     def __str__(self):
-        return "confirmation for {}".format(self.osu_username)
+        return f"confirmation for {self.osu_username}"
 
     @classmethod
     def create(cls, osu_username):
