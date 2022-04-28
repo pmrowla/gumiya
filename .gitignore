@@ -61,8 +61,8 @@ node_modules/
 # User-uploaded media
 twitch_osu_bot/media/
 
-
-
 staticfiles/
 
 .cache/
+
+*.pem
