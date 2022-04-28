@@ -15,16 +15,14 @@ framework.
 """
 import os
 import sys
+from pathlib import Path
 
 from django.core.wsgi import get_wsgi_application
 
 # This allows easy placement of apps within the interior
 # twitch_osu_bot directory.
-app_path = os.path.dirname(os.path.abspath(__file__)).replace("/config", "")
-sys.path.append(os.path.join(app_path, "twitch_osu_bot"))
-
-if os.environ.get("DJANGO_SETTINGS_MODULE") == "config.settings.production":
-    from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
+ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent
+sys.path.append(os.path.join(ROOT_DIR, "twitch_osu_bot"))
 
 # We defer to a DJANGO_SETTINGS_MODULE already in the environment. This breaks
 # if running multiple sites in the same mod_wsgi process. To fix this, use
@@ -36,8 +34,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
 application = get_wsgi_application()
-if os.environ.get("DJANGO_SETTINGS_MODULE") == "config.settings.production":
-    application = Sentry(application)
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication
 # application = HelloWorldApplication(application)

@@ -7,12 +7,13 @@ https://docs.djangoproject.com/en/dev/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/dev/ref/settings/
 """
+from pathlib import Path
+
 import environ
 
-ROOT_DIR = (
-    environ.Path(__file__) - 3
-)  # (twitch_osu_bot/config/settings/base.py - 3 = twitch_osu_bot/)
-APPS_DIR = ROOT_DIR.path("twitch_osu_bot")
+ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
+# twitch_osu_bot/
+APPS_DIR = ROOT_DIR / "twitch_osu_bot"
 
 # Load operating system environment variables and then prepare to use them
 env = environ.Env()
@@ -24,10 +25,7 @@ if READ_DOT_ENV_FILE:
     # Operating System Environment variables have precedence over variables defined in the .env file,
     # that is to say variables from the .env files will only be used if not defined
     # as environment variables.
-    env_file = str(ROOT_DIR.path(".env"))
-    print("Loading : {}".format(env_file))
-    env.read_env(env_file)
-    print("The .env file has been loaded. See base.py for more information")
+    env.read_env(str(ROOT_DIR / ".env"))
 
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -43,9 +41,11 @@ DJANGO_APPS = [
     # 'django.contrib.humanize',
     # Admin
     "django.contrib.admin",
+    "django.forms",
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",  # Form layouts
+    "crispy_bootstrap5",
     "allauth",  # registration
     "allauth.account",  # registration
     "allauth.socialaccount",  # registration
@@ -55,10 +55,10 @@ THIRD_PARTY_APPS = [
 # Apps specific for this project go here.
 LOCAL_APPS = [
     # custom users app
-    "twitch_osu_bot.users.apps.UsersConfig",
+    "twitch_osu_bot.users",
     # Your stuff: custom apps go here
-    "twitch_osu_bot.irc.apps.IrcConfig",
-    "twitch_osu_bot.streams.apps.StreamsConfig",
+    "twitch_osu_bot.irc",
+    "twitch_osu_bot.streams",
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -68,11 +68,13 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ------------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -88,13 +90,14 @@ DEBUG = env.bool("DJANGO_DEBUG", False)
 # FIXTURE CONFIGURATION
 # ------------------------------------------------------------------------------
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-FIXTURE_DIRS
-FIXTURE_DIRS = (str(APPS_DIR.path("fixtures")),)
+FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
 EMAIL_BACKEND = env(
     "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
 )
+EMAIL_TIMEOUT = 5
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -113,6 +116,7 @@ DATABASES = {
     "default": env.db("DATABASE_URL", default="postgres:///twitch_osu_bot"),
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # GENERAL CONFIGURATION
@@ -146,18 +150,9 @@ TEMPLATES = [
         # See: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-dirs
-        "DIRS": [
-            str(APPS_DIR.path("templates")),
-        ],
+        "DIRS": [str(APPS_DIR / "templates")],
+        "APP_DIRS": True,
         "OPTIONS": {
-            # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-debug
-            "debug": DEBUG,
-            # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-loaders
-            # https://docs.djangoproject.com/en/dev/ref/templates/api/#loader-types
-            "loaders": [
-                "django.template.loaders.filesystem.Loader",
-                "django.template.loaders.app_directories.Loader",
-            ],
             # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -169,26 +164,28 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
                 # Your stuff: custom template context processors go here
+                "twitch_osu_bot.users.context_processors.allauth_settings",
             ],
         },
     },
 ]
 
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
+
 # See: http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
-CRISPY_TEMPLATE_PACK = "bootstrap4"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 # STATIC FILE CONFIGURATION
 # ------------------------------------------------------------------------------
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#static-root
-STATIC_ROOT = str(ROOT_DIR("staticfiles"))
+STATIC_ROOT = str(ROOT_DIR / "staticfiles")
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
 
 # See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
-STATICFILES_DIRS = [
-    str(APPS_DIR.path("static")),
-]
+STATICFILES_DIRS = [str(APPS_DIR / "static")]
 
 # See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#staticfiles-finders
 STATICFILES_FINDERS = [
@@ -199,7 +196,7 @@ STATICFILES_FINDERS = [
 # MEDIA CONFIGURATION
 # ------------------------------------------------------------------------------
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#media-root
-MEDIA_ROOT = str(APPS_DIR("media"))
+MEDIA_ROOT = str(APPS_DIR / "media")
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "/media/"
@@ -241,6 +238,32 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# SECURITY
+SESSION_COOKIES_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = "DENY"
+
+# LOGGING
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s "
+            "%(process)d %(thread)d %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        }
+    },
+    "root": {"level": "INFO", "handlers": ["console"]},
+}
+
 # AUTHENTICATION CONFIGURATION
 # ------------------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
@@ -262,6 +285,7 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": ["channel_check_subscription", "user_read"],
     }
 }
+SOCIALACCOUNT_STORE_TOKENS = True
 
 # Custom user app defaults
 # Select the correct user model
@@ -269,8 +293,6 @@ AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "users:redirect"
 LOGIN_URL = "account_login"
 
-# SLUGLIFIER
-AUTOSLUG_SLUGIFY_FUNCTION = "slugify.slugify"
 # django-compressor
 # ------------------------------------------------------------------------------
 INSTALLED_APPS += ["compressor"]
