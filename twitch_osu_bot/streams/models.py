@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import re
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from osuapi.enums import BeatmapStatus
 
@@ -17,7 +14,6 @@ from .managers import TwitchUserManager
 logger = logging.getLogger(__name__)
 
 
-@python_2_unicode_compatible
 class TwitchUser(models.Model):
 
     user = models.OneToOneField(
@@ -61,7 +57,6 @@ class TwitchUser(models.Model):
         return None
 
 
-@python_2_unicode_compatible
 class BotOptions(models.Model):
 
     twitch_user = models.OneToOneField(

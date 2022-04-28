@@ -2,8 +2,6 @@
 """
 Gumiya Bancho (osu!) irc3 plugin.
 """
-from __future__ import absolute_import, unicode_literals
-
 import irc3
 from django.contrib.sites.shortcuts import get_current_site
 from gumiyabot.bancho import BaseBanchoPlugin
