@@ -1,49 +1,25 @@
-wheel>=0.34.2
+pytz==2022.1
+python-slugify==6.1.2
+Pillow==9.1.0
+rcssmin==1.1.0
+argon2-cffi==21.3.0
+whitenoise==6.0.0
+redis>=4.2.2
+hiredis==2.0.0
 
-# Bleeding edge Django
-django>=2.2.14,<2.3
+# Django LTS
+django==3.2.13
+django-environ==0.8.1
+django-model-utils==4.2.0
+django-allauth==0.50.0
+django-crispy-forms==1.14.0
+crispy-bootstrap5==0.6
+django-compressor==3.1
+django-redis==5.2.0
 
-# Configuration
-django-environ==0.4.5
-whitenoise==4.1.2
-
-# Forms
-django-braces==1.13.0
-django-crispy-forms==1.7.2
-
-# Models
-django-model-utils==3.1.2
-
-# Images
-Pillow>=7.2.0
-
-# Password storage
-argon2-cffi==19.1.0
-
-# For user registration, either via email or social
-# Well-built with regular release cycles!
-django-allauth>=0.42.0
-
-
-# Python-PostgreSQL Database Adapter
-psycopg2>=2.8.5,<2.9
-
-# Unicode slugification
-awesome-slugify==1.6.5
-
-# Time zones support
-pytz>=2020.1
-
-# Redis support
-django-redis>=4.12.1<5
-redis>=3.2.0
-
-rcssmin==1.0.6
-django-compressor==2.2
-
-# Your custom requirements go here
-irc3>=1.0.0
-aiohttp>=2.0.7
-aiocron>=0.6
-osuapi>=0.0.43
-gumiyabot>=1.0.0
+# gumiya
+irc3==1.1.7
+aiohttp==3.8.1
+aiocron==1.8
+osuapi==0.0.43
+gumiyabot==1.0.0
