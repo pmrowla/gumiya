@@ -1,16 +1,15 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.views.generic import DetailView, RedirectView
 from django.views.generic.edit import FormView
 
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-
+from ..streams.models import BotOptions, TwitchUser
 from . import signals
 from .forms import SetOsuUsernameForm
-from .models import User, OsuUsername
-from ..streams.models import BotOptions, TwitchUser
+from .models import OsuUsername, User
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):
@@ -36,17 +35,17 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
             TwitchUser.update_or_create(user)
         except ObjectDoesNotExist:
             pass
-        return reverse('users:detail')
+        return reverse("users:detail")
 
 
 class OsuUsernameView(LoginRequiredMixin, FormView):
 
     model = OsuUsername
-    template_name = 'users/osu_username_form.html'
+    template_name = "users/osu_username_form.html"
     form_class = SetOsuUsernameForm
 
     def get_success_url(self):
-        return reverse('users:detail')
+        return reverse("users:detail")
 
     def form_valid(self, form):
         form.save(self.request)
@@ -54,12 +53,12 @@ class OsuUsernameView(LoginRequiredMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         res = None
-        if 'action_set' in request.POST:
+        if "action_set" in request.POST:
             res = super(OsuUsernameView, self).post(request, *args, **kwargs)
-        elif request.POST.get('username'):
-            if 'action_verify' in request.POST:
+        elif request.POST.get("username"):
+            if "action_verify" in request.POST:
                 res = self._action_verify(request)
-            elif 'action_unlink' in request.POST:
+            elif "action_unlink" in request.POST:
                 res = self._action_unlink(request)
             res = res or HttpResponseRedirect(self.get_success_url())
         else:
@@ -67,7 +66,7 @@ class OsuUsernameView(LoginRequiredMixin, FormView):
         return res
 
     def _action_verify(self, request, *args, **kwargs):
-        username = request.POST.get('username')
+        username = request.POST.get("username")
         try:
             osu_username = OsuUsername.objects.get(user=request.user, username=username)
             osu_username.send_confirmation(request, message=True)
@@ -76,15 +75,17 @@ class OsuUsernameView(LoginRequiredMixin, FormView):
             pass
 
     def _action_unlink(self, request, *args, **kwargs):
-        username = request.POST.get('username')
+        username = request.POST.get("username")
         try:
             osu_username = OsuUsername.objects.get(user=request.user)
             osu_username.delete()
-            signals.osu_username_unlinked.send(sender=request.user.__class__,
-                                               request=request,
-                                               user=request.user,
-                                               username=username)
-            messages.success(request, 'Successfully unlinked your Osu! account.')
+            signals.osu_username_unlinked.send(
+                sender=request.user.__class__,
+                request=request,
+                user=request.user,
+                username=username,
+            )
+            messages.success(request, "Successfully unlinked your Osu! account.")
             return HttpResponseRedirect(self.get_success_url())
         except OsuUsername.DoesNotExist:
             pass

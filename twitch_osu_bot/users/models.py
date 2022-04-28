@@ -12,12 +12,11 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from . import signals
-from .managers import OsuUsernameManager, OsuUsernameConfirmationManager
+from .managers import OsuUsernameConfirmationManager, OsuUsernameManager
 
 
 @python_2_unicode_compatible
 class User(AbstractUser):
-
     def __str__(self):
         return self.username
 
@@ -25,26 +24,28 @@ class User(AbstractUser):
 @python_2_unicode_compatible
 class OsuUsername(models.Model):
 
-    user = models.OneToOneField(User,
-                                verbose_name=_('user'),
-                                related_name='osu_username',
-                                on_delete=models.CASCADE)
-    username = models.CharField(_('osu! username'),
-                                unique=True,
-                                max_length=255)
-    verified = models.BooleanField(_('verified'), default=False)
+    user = models.OneToOneField(
+        User,
+        verbose_name=_("user"),
+        related_name="osu_username",
+        on_delete=models.CASCADE,
+    )
+    username = models.CharField(_("osu! username"), unique=True, max_length=255)
+    verified = models.BooleanField(_("verified"), default=False)
 
     objects = OsuUsernameManager()
 
     def __str__(self):
-        return '{} ({})'.format(self.username, self.user)
+        return "{} ({})".format(self.username, self.user)
 
     def send_confirmation(self, request=None, message=False):
         confirmation = OsuUsernameConfirmation.create(self)
         if message:
-            msg = ('To verify your account, PM the following message in game to '
-                   '{} (verification key will expire in 15 minutes): '
-                   '!verify {}'.format(settings.BANCHO_USERNAME, confirmation.key))
+            msg = (
+                "To verify your account, PM the following message in game to "
+                f"{settings.BANCHO_USERNAME} (verification key will expire in 15 minutes): "
+                f"!verify {confirmation.key}"
+            )
             messages.info(request, msg)
             msg = (
                 'If you have problems getting verified first '
@@ -70,16 +71,16 @@ class OsuUsername(models.Model):
 @python_2_unicode_compatible
 class OsuUsernameConfirmation(models.Model):
 
-    osu_username = models.ForeignKey(OsuUsername,
-                                     verbose_name=_('osu! username'),
-                                     on_delete=models.CASCADE)
-    created = models.DateTimeField(_('created'), auto_now_add=True)
-    key = models.CharField(_('key'), max_length=12, unique=True)
+    osu_username = models.ForeignKey(
+        OsuUsername, verbose_name=_("osu! username"), on_delete=models.CASCADE
+    )
+    created = models.DateTimeField(_("created"), auto_now_add=True)
+    key = models.CharField(_("key"), max_length=12, unique=True)
 
     objects = OsuUsernameConfirmationManager()
 
     def __str__(self):
-        return 'confirmation for {}'.format(self.osu_username)
+        return "confirmation for {}".format(self.osu_username)
 
     @classmethod
     def create(cls, osu_username):
@@ -89,6 +90,7 @@ class OsuUsernameConfirmation(models.Model):
     def key_expired(self):
         expiration_date = self.created + timedelta(minutes=15)
         return expiration_date <= timezone.now()
+
     key_expired.boolean = True
 
     def confirm(self, request=None):
@@ -100,9 +102,9 @@ class OsuUsernameConfirmation(models.Model):
             osu_username = self.osu_username
             osu_username.verified = True
             osu_username.save()
-            signals.osu_username_confirmed.send(sender=self.__class__,
-                                                request=request,
-                                                osu_username=osu_username)
+            signals.osu_username_confirmed.send(
+                sender=self.__class__, request=request, osu_username=osu_username
+            )
             return osu_username
 
     class AlreadyVerified(Exception):
