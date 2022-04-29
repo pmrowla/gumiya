@@ -258,6 +258,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_ALLOW_REGISTRATION = env.bool('DJANGO_ACCOUNT_ALLOW_REGISTRATION', True)
 ACCOUNT_ADAPTER = 'twitch_osu_bot.users.adapters.AccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'twitch_osu_bot.users.adapters.SocialAccountAdapter'
+SOCIALACCOUNT_STORE_TOKENS = True
 SOCIALACCOUNT_PROVIDERS = {
     'twitch': {
         'SCOPE': ['channel_check_subscription', 'user_read'],
