@@ -187,13 +187,14 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                         twitch_user = await sync_to_async(TwitchUser.objects.get)(
                             user__username=debug_username
                         )
-                        channel = "#{}".format(debug_username)
-                        self.twitch_ids[channel] = twitch_user.twitch_id
                         osu_username = await sync_to_async(
                             TwitchUser.osu_username_for_twitch_id
                         )(twitch_user.twitch_id)
-                        self.osu_nicks[channel] = osu_username.username
-                        live.add(channel)
+                        if osu_username:
+                            channel = "#{}".format(debug_username)
+                            self.twitch_ids[channel] = twitch_user.twitch_id
+                            self.osu_nicks[channel] = osu_username.username
+                            live.add(channel)
                     except TwitchUser.DoesNotExist:
                         self.bot.log.debug("[twitch] debug user does not exist")
             joins = live.difference(self.joined)
