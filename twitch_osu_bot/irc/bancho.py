@@ -3,6 +3,7 @@
 Gumiya Bancho (osu!) irc3 plugin.
 """
 import irc3
+from asgiref.sync import sync_to_async
 from django.contrib.sites.shortcuts import get_current_site
 from gumiyabot.bancho import BaseBanchoPlugin
 from irc3.plugins.command import command
@@ -27,6 +28,11 @@ class BanchoConnection(irc3.IrcConnection):
         return super(BanchoConnection, self).data_received(data)
 
 
+def _format_site():
+    site = str(get_current_site(None))
+    return f"[https://{site} {site}]"
+
+
 @irc3.plugin
 class GumiyaBanchoPlugin(BaseBanchoPlugin):
     def __init__(self, bot):
@@ -34,29 +40,29 @@ class GumiyaBanchoPlugin(BaseBanchoPlugin):
 
     @irc3.event(irc3.rfc.CONNECTED)
     def connected(self, **kw):
-        self.bot.log.info("[bancho] Connected to bancho as {}".format(self.bot.nick))
+        self.bot.log.info(f"[bancho] Connected to bancho as {self.bot.nick}")
 
     @command(public=False)
-    def verify(self, mask, target, args):
+    async def verify(self, mask, target, args):
         """Verify an osu! account.
 
         %%verify <verification_code>
         """
-        self.bot.log.debug("[bancho] verify {} {} {}".format(mask, target, args))
         username = mask.nick
         key = args.get("<verification_code>")
-        self.bot.log.info(
-            "[bancho] New verification request from {}: {}".format(username, key)
-        )
+        self.bot.log.info(f"[bancho] New verification request from {username}: {key}")
 
         try:
-            osu_username = OsuUsername.objects.get(username=username)
+            osu_username = await sync_to_async(OsuUsername.objects.get)(
+                username=username
+            )
         except OsuUsername.DoesNotExist:
             self.bot.log.debug("[bancho] - User is not linked to any twitch accounts")
+            site = await sync_to_async(_format_site)()
             self.bot.privmsg(
                 mask.nick,
-                "You must first link your twitch and your osu! accounts at {} "
-                "before you can be verified.".format(get_current_site(None)),
+                f"You must first link your twitch and your osu! accounts at {site} "
+                "before you can be verified.",
             )
             return
 
@@ -64,29 +70,31 @@ class GumiyaBanchoPlugin(BaseBanchoPlugin):
             self.bot.log.debug("[bancho] - Already verified")
             self.bot.privmsg(mask.nick, "You are already verified.")
             return
-        for confirmation in OsuUsernameConfirmation.objects.filter(
-            osu_username=osu_username
-        ):
-            if confirmation.key == key:
-                try:
-                    confirmation.confirm()
-                    self.bot.log.debug("[bancho] - Verification confirmed")
-                    msg = "Congratulations, you are now verified."
-                except OsuUsernameConfirmation.ConfirmationExpired:
-                    self.bot.log.debug("[bancho] - Expired verification code")
-                    msg = (
-                        "This verification code is expired. "
-                        "Please restart the verification process at {}.".format(
-                            get_current_site(None)
-                        )
-                    )
-                self.bot.privmsg(mask.nick, msg)
-                return
-        self.bot.log.debug("[bancho] - invalid verification code")
-        self.bot.privmsg(mask.nick, "Invalid verification code.")
+        try:
+            confirmation = await sync_to_async(OsuUsernameConfirmation.objects.get)(
+                osu_username=osu_username, key=key
+            )
+        except OsuUsernameConfirmation.DoesNotExist:
+            self.bot.log.debug("[bancho] - invalid verification code")
+            self.bot.privmsg(mask.nick, "Invalid verification code.")
+            return
+        try:
+            await sync_to_async(confirmation.confirm)()
+            self.bot.log.debug("[bancho] - Verification confirmed")
+            msg = "Congratulations, you are now verified."
+        except OsuUsernameConfirmation.ConfirmationExpired:
+            self.bot.log.debug("[bancho] - Expired verification code")
+            site = await sync_to_async(_format_site)()
+            msg = (
+                "This verification code is expired. "
+                f"Please restart the verification process at {site}."
+            )
+        self.bot.privmsg(mask.nick, msg)
 
     @cron("0 * * * *")
-    def prune_confirmations(self):
+    async def prune_confirmations(self):
         """Cleanup expired confirmations."""
         self.bot.log.debug("[bancho] Deleting expired verification requests")
-        OsuUsernameConfirmation.objects.delete_expired_confirmations()
+        await sync_to_async(
+            OsuUsernameConfirmation.objects.delete_expired_confirmations
+        )()
