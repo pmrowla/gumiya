@@ -42,10 +42,10 @@ class Command(BaseCommand):
         if settings.DEBUG:
             config_common["debug"] = True
 
-        twitch_config = dict(
-            host="irc.chat.twitch.tv",
-            port=6667,
-            includes=[
+        twitch_config = {
+            "host": "irc.chat.twitch.tv",
+            "port": 6667,
+            "includes": [
                 "irc3.plugins.core",
                 "irc3.plugins.autocommand",
                 "irc3.plugins.command",
@@ -53,35 +53,35 @@ class Command(BaseCommand):
                 "irc3.plugins.log",
                 "twitch_osu_bot.irc.twitch",
             ],
-            autocommands=[
+            "autocommands": [
                 "CAP REQ :twitch.tv/membership",
                 "CAP REQ :twitch.tv/commands",
                 "CAP REQ :twitch.tv/tags",
             ],
-            nick=settings.TWITCH_USERNAME,
-            password=settings.TWITCH_PASSWORD,
-            osu_api_key=settings.OSU_API_KEY,
-            tillerino_api_key=settings.TILLERINO_API_KEY,
-            bancho_nick=settings.BANCHO_USERNAME,
-        )
+            "nick": settings.TWITCH_USERNAME,
+            "password": settings.TWITCH_PASSWORD,
+            "osu_api_key": settings.OSU_API_KEY,
+            "tillerino_api_key": settings.TILLERINO_API_KEY,
+            "bancho_nick": settings.BANCHO_USERNAME,
+        }
         twitch_config.update(config_common)
 
         if settings.DEBUG:
             twitch_config["debug_username"] = settings.DEBUG_USERNAME
 
-        bancho_config = dict(
-            host="irc.ppy.sh",
-            port=6667,
-            includes=[
+        bancho_config = {
+            "host": "irc.ppy.sh",
+            "port": 6667,
+            "includes": [
                 "irc3.plugins.core",
                 "irc3.plugins.command",
                 "irc3.plugins.cron",
                 "irc3.plugins.log",
                 "twitch_osu_bot.irc.bancho",
             ],
-            nick=settings.BANCHO_USERNAME,
-            password=settings.BANCHO_PASSWORD,
-        )
+            "nick": settings.BANCHO_USERNAME,
+            "password": settings.BANCHO_PASSWORD,
+        }
         bancho_config.update(config_common)
         twitch_bot = irc3.IrcBot(loop=loop, bancho_queue=bancho_queue, **twitch_config)
         twitch_bot.run(forever=False)
