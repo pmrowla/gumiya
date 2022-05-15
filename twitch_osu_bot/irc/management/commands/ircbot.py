@@ -1,10 +1,21 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import logging
 
 import irc3
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from gumiyabot.bancho import BanchoConnection
+
+logger = logging.getLogger(__name__)
+
+
+def log_exception(loop, context):
+    logger.error(
+        context.get("message", "Unexpected IRC error"),
+        exc_info=context.get("exception"),
+    )
+    return loop.default_exception_handler(context)
 
 
 class Command(BaseCommand):
@@ -12,8 +23,10 @@ class Command(BaseCommand):
     help = "Run the twitch and bancho IRC bots."
 
     def handle(self, *args, **kwargs):
-        loop = asyncio.get_event_loop()
-        bancho_queue = asyncio.Queue(loop=loop)
+        loop = asyncio.new_event_loop()
+        loop.set_exception_handler(log_exception)
+        asyncio.set_event_loop(loop)
+        bancho_queue = asyncio.Queue()
 
         config_common = {
             "irc3.plugins.command": {
