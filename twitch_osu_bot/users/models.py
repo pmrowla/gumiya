@@ -20,7 +20,6 @@ class User(AbstractUser):
 
 
 class OsuUsername(models.Model):
-
     user = models.OneToOneField(
         User,
         verbose_name=_("user"),
@@ -45,9 +44,9 @@ class OsuUsername(models.Model):
             )
             messages.info(request, msg)
             msg = (
-                'If you have problems getting verified first '
+                "If you have problems getting verified first "
                 '<a href="https://github.com/pmrowla/gumiya/wiki/FAQ#i-cant-verify-my-osu-account">check the FAQ</a>. '
-                'If you have checked the FAQ and still cannot be verified, PM pmrowla in-game.'
+                "If you have checked the FAQ and still cannot be verified, PM pmrowla in-game."
             )
             messages.warning(request, mark_safe(msg))
         return confirmation
@@ -66,7 +65,6 @@ class OsuUsername(models.Model):
 
 
 class OsuUsernameConfirmation(models.Model):
-
     osu_username = models.ForeignKey(
         OsuUsername, verbose_name=_("osu! username"), on_delete=models.CASCADE
     )

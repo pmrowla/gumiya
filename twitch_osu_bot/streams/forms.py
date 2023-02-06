@@ -9,7 +9,6 @@ from .models import BotOptions
 
 
 class BotOptionsForm(forms.ModelForm):
-
     enabled = forms.TypedChoiceField(
         label=_("Enable the bot on your twitch channel"),
         coerce=lambda x: bool(int(x)),

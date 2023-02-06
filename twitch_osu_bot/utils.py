@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class TwitchApi(object):
-
     # API endpoints
     API_BASE = "https://api.twitch.tv/helix"
     GET_USERS = "/".join((API_BASE, "users"))

@@ -7,7 +7,6 @@ from .models import OsuUsername
 
 
 class SetOsuUsernameForm(UserForm):
-
     username = forms.CharField(
         label=_("Osu! username"),
         max_length=255,
