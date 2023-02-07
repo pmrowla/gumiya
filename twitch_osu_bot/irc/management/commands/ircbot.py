@@ -19,7 +19,6 @@ def log_exception(loop, context):
 
 
 class Command(BaseCommand):
-
     help = "Run the twitch and bancho IRC bots."
 
     def handle(self, *args, **kwargs):

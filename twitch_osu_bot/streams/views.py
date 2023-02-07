@@ -10,7 +10,6 @@ from .models import BotOptions
 
 
 class BotOptionsView(LoginRequiredMixin, UpdateView):
-
     model = BotOptions
     template_name = "streams/bot_options_form.html"
     form_class = BotOptionsForm

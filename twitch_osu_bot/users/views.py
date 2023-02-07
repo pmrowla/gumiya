@@ -39,7 +39,6 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 
 
 class OsuUsernameView(LoginRequiredMixin, FormView):
-
     model = OsuUsername
     template_name = "users/osu_username_form.html"
     form_class = SetOsuUsernameForm

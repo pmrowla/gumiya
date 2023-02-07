@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class TwitchUser(models.Model):
-
     user = models.OneToOneField(
         User,
         verbose_name=_("user"),
@@ -58,7 +57,6 @@ class TwitchUser(models.Model):
 
 
 class BotOptions(models.Model):
-
     twitch_user = models.OneToOneField(
         TwitchUser,
         verbose_name=_("bot options"),
