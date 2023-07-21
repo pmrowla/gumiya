@@ -1,8 +1,4 @@
-version: '2'
-
-volumes:
-  postgres_13_data: {}
-  postgres_backup: {}
+version: "3.8"
 
 services:
   postgres:
@@ -12,6 +8,8 @@ services:
       - postgres_backup:/backups
     env_file: .env
     restart: always
+    networks:
+      - default
 
   django:
     build:
@@ -23,6 +21,13 @@ services:
     command: /gunicorn.sh
     env_file: .env
     restart: always
+    expose:
+      - "5000"
+    volumes:
+      - postgres_backup:/backups
+    networks:
+      - default
+      - nginx-proxy
 
   irc:
     build:
@@ -34,35 +39,23 @@ services:
     command: python /app/manage.py ircbot
     env_file: .env
     restart: always
-
-  nginx:
-    build: ./compose/nginx
-    depends_on:
-      - django
-      - certbot
-    environment:
-      - MY_DOMAIN_NAME=gumiya.pmrowla.com
-    ports:
-      - "0.0.0.0:80:80"
-      - "0.0.0.0:443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/lib/letsencrypt:/var/lib/letsencrypt
-    restart: always
-
-  certbot:
-    image: certbot/certbot
-    command: ["/bin/sh", "-c", "sleep 6 && certbot certonly -n --standalone -d gumiya.pmrowla.com --text --agree-tos --email peter@pmrowla.com --rsa-key-size 4096 --verbose --keep-until-expiring --preferred-challenges=http"]
-    entrypoint: ""
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/lib/letsencrypt:/var/lib/letsencrypt
-    ports:
-      - "80"
-      - "443"
-    environment:
-      - TERM=xterm
+    networks:
+      - default
+      - nginx-proxy
 
   redis:
     image: redis:7.0
     restart: always
+    networks:
+      - default
+      - nginx-proxy
+
+volumes:
+  postgres_13_data:
+  postgres_backup:
+
+networks:
+  default:
+  nginx-proxy:
+    name: nginx-proxy
+    external: true
