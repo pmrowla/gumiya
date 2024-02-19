@@ -8,6 +8,7 @@ Local settings
 - Add Django Debug Toolbar
 - Add django-extensions as app
 """
+
 import socket
 
 from .base import *  # noqa
