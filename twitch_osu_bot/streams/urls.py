@@ -1,8 +1,8 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
 app_name = "streams"
 urlpatterns = [
-    url(regex=r"^~settings/$", view=views.BotOptionsView.as_view(), name="settings"),
+    path("~settings/", view=views.BotOptionsView.as_view(), name="settings"),
 ]
