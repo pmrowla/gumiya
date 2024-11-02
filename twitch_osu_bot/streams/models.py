@@ -4,7 +4,7 @@ import re
 
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from osuapi.enums import BeatmapStatus
 
 from ..users.models import OsuUsername, User

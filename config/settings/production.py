@@ -91,12 +91,18 @@ aws_s3_domain = AWS_S3_CUSTOM_DOMAIN or f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws
 # URL that handles the media served from MEDIA_ROOT, used for managing
 # stored files.
 MEDIA_URL = f"https://s3.amazonaws.com/{AWS_STORAGE_BUCKET_NAME}/"
-DEFAULT_FILE_STORAGE = "twitch_osu_bot.utils.storages.MediaRootS3Boto3Storage"
+STORAGES = {
+    "default": {
+        "BACKEND": "twitch_osu_bot.utils.storages.MediaRootS3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 
 # Static Assets
 # ------------------------
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # COMPRESSOR
 # ------------------------------------------------------------------------------

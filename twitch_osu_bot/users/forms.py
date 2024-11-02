@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from allauth.account.forms import UserForm
 from django import forms
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from .models import OsuUsername
 
