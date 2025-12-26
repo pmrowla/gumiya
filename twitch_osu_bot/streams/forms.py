@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from osuapi.enums import BeatmapStatus
+from ossapi.enums import RankStatus
 
 from .models import BotOptions
 
@@ -24,7 +24,7 @@ class BotOptionsForm(forms.ModelForm):
 
     beatmap_allowed_status = forms.TypedMultipleChoiceField(
         label=("Allowed statuses for beatmap requests"),
-        choices=[(x.value, x.name.upper()) for x in BeatmapStatus],
+        choices=[(x.value, x.name.upper()) for x in RankStatus],
         coerce=lambda x: int(x),
         required=True,
         widget=forms.CheckboxSelectMultiple,

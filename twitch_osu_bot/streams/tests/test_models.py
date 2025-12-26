@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import MagicMock, patch
 
-from osuapi.enums import BeatmapStatus
+from ossapi.enums import RankStatus
 from test_plus.test import TestCase
 
 from ...users.tests.factories import UserFactory
@@ -45,5 +45,5 @@ class TestBotOptions(TestCase):
     def test_allowed_status_list(self):
         self.assertEqual(
             self.bot_options.allowed_status_list,
-            [BeatmapStatus.ranked, BeatmapStatus.approved],
+            [RankStatus.ranked, RankStatus.approved],
         )

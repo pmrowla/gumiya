@@ -5,7 +5,7 @@ import re
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from osuapi.enums import BeatmapStatus
+from ossapi.enums import RankStatus
 
 from ..users.models import OsuUsername, User
 from ..utils import TwitchApi
@@ -76,7 +76,7 @@ class BotOptions(models.Model):
             ),
         ],
         default=",".join(
-            [str(BeatmapStatus.ranked.value), str(BeatmapStatus.approved.value)]
+            [str(RankStatus.RANKED.value), str(RankStatus.APPROVED.value)]
         ),
         max_length=64,
     )
@@ -93,4 +93,4 @@ class BotOptions(models.Model):
 
     @property
     def allowed_status_list(self):
-        return [BeatmapStatus(int(x)) for x in self.beatmap_allowed_status.split(",")]
+        return [RankStatus(int(x)) for x in self.beatmap_allowed_status.split(",")]
