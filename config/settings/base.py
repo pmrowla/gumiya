@@ -77,6 +77,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -312,5 +313,7 @@ TWITCH_PASSWORD = env.str("TWITCH_PASSWORD", "oauth:")
 # OSU CONFIGURATION
 BANCHO_USERNAME = env.str("BANCHO_USERNAME", "")
 BANCHO_PASSWORD = env.str("BANCHO_PASSWORD", "")
-OSU_API_KEY = env.str("OSU_API_KEY", "")
+OSU_CLIENT_ID = env.str("OSU_CLIENT_ID", "")
+OSU_CLIENT_SECRET = env.str("OSU_CLIENT_SECRET", "")
+OSU_TOKEN_DIRECTORY = env.str("OSU_TOKEN_DIRECTORY", None)
 TILLERINO_API_KEY = env.str("TILLERINO_API_KEY", "")

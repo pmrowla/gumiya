@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from django import template
 from django.template.defaultfilters import stringfilter
-from osuapi.enums import BeatmapStatus
+from ossapi.enums import RankStatus
 
 register = template.Library()
 
@@ -12,5 +12,5 @@ register = template.Library()
 @stringfilter
 def beatmap_status(s):
     return ", ".join(
-        [x.name.upper() for x in map(lambda x: BeatmapStatus(int(x)), s.split(","))]
+        [x.name.upper() for x in map(lambda x: RankStatus(int(x)), s.split(","))]
     )

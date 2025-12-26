@@ -59,7 +59,9 @@ class Command(BaseCommand):
             ],
             "nick": settings.TWITCH_USERNAME,
             "password": settings.TWITCH_PASSWORD,
-            "osu_api_key": settings.OSU_API_KEY,
+            "osu_client_id": settings.OSU_CLIENT_ID,
+            "osu_client_secret": settings.OSU_CLIENT_SECRET,
+            "osu_token_directory": settings.OSU_TOKEN_DIRECTORY,
             "tillerino_api_key": settings.TILLERINO_API_KEY,
             "bancho_nick": settings.BANCHO_USERNAME,
         }

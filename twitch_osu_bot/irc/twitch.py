@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 from gumiyabot.twitch import BaseTwitchPlugin, BeatmapValidationError
 from gumiyabot.utils import TillerinoApi
 from irc3.plugins.command import command
-from osuapi import AHConnector, OsuApi
+from ossapi import OssapiAsync
 from requests.exceptions import RequestException
 
 from ..streams.models import BotOptions, TwitchUser
@@ -22,7 +22,11 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         self.bot = bot
         self.bancho_queue = self.bot.config.get("bancho_queue")
         self.bancho_nick = self.bot.config.get("bancho_nick")
-        self.osu = OsuApi(self.bot.config.get("osu_api_key"), connector=AHConnector())
+        self.osu = OssapiAsync(
+            self.bot.config.get("osu_client_id"),
+            self.bot.config.get("osu_client_secret"),
+            token_directory=self.bot.config.get("osu_token_directory"),
+        )
         self.twitch = TwitchApi()
         self.tillerino = TillerinoApi(self.bot.config.get("tillerino_api_key"))
         self.joined = set()
@@ -42,20 +46,16 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         # Override connected() since we don't use default twitch_channel
         self.bot.log.info("[twitch] Connected to twitch as {}".format(self.bot.nick))
 
-    def validate_beatmaps(self, beatmaps, options=None, **kwargs):
+    def validate_beatmaps(self, beatmaps, mapset, **kwargs):
         valid_beatmaps = []
-        if len(beatmaps) > 1:
-            mapset = True
-        else:
-            mapset = False
-        for beatmap in beatmaps:
+        for beatmap, diff in beatmaps:
             if beatmap.approved not in options.allowed_status_list:
-                if mapset:
+                if len(beatmaps) > 1:
                     reason = "Rejecting [{}] mapset {} - {} (by {}): Approved status must be one of: {}".format(
-                        beatmap.approved.name.capitalize(),
-                        beatmap.artist,
-                        beatmap.title,
-                        beatmap.creator,
+                        beatmap.status.name.capitalize(),
+                        mapset.artist,
+                        mapset.title,
+                        mapset.creator,
                         ", ".join(
                             map(
                                 lambda x: x.name.capitalize(),
@@ -65,11 +65,11 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                     )
                 else:
                     reason = "Rejecting [{}] beatmap {} - {} [{}] (by {}): Approved status must be one of: {}".format(
-                        beatmap.approved.name.capitalize(),
-                        beatmap.artist,
-                        beatmap.title,
-                        beatmap.version,
-                        beatmap.creator,
+                        beatmap.status.name.capitalize(),
+                        mapset.artist,
+                        mapset.title,
+                        mapset.version,
+                        mapset.creator,
                         ", ".join(
                             map(
                                 lambda x: x.name.capitalize(),
@@ -79,18 +79,19 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                     )
                 raise BeatmapValidationError(reason)
             elif (
-                beatmap.difficultyrating >= options.beatmap_min_stars
-                and beatmap.difficultyrating <= options.beatmap_max_stars
+                diff.star_rating >= options.beatmap_min_stars
+                and diff.star_rating <= options.beatmap_max_stars
             ):
                 valid_beatmaps.append(beatmap)
         if not valid_beatmaps:
-            if mapset:
+            beatmap, diff = beatmaps[0]
+            if len(beatmaps) > 1:
                 reason = (
                     "Rejecting mapset {} - {} (by {}): "
                     "Must contain at least one beatmap with difficulty in range {:g} to {:g} ★".format(
-                        beatmaps[0].artist,
-                        beatmaps[0].title,
-                        beatmaps[0].creator,
+                        mapset.artist,
+                        mapset.title,
+                        mapset.creator,
                         round(options.beatmap_min_stars, 2),
                         round(options.beatmap_max_stars, 2),
                     )
@@ -99,11 +100,11 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                 reason = (
                     "Rejecting beatmap {} - {} [{}] (by {}) {:g} ★: "
                     "Difficulty must be in range {:g} ★ to {:g} ★".format(
-                        beatmaps[0].artist,
-                        beatmaps[0].title,
-                        beatmaps[0].version,
-                        beatmaps[0].creator,
-                        round(beatmaps[0].difficultyrating, 2),
+                        mapset.artist,
+                        mapset.title,
+                        beatmap.version,
+                        mapset.creator,
+                        round(diff.star_rating, 2),
                         round(options.beatmap_min_stars, 2),
                         round(options.beatmap_max_stars, 2),
                     )
