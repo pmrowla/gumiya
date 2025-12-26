@@ -25,7 +25,7 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         self.osu = OssapiAsync(
             self.bot.config.get("osu_client_id"),
             self.bot.config.get("osu_client_secret"),
-            token_directory=self.bot.config.get("osu_token_directory")
+            token_directory=self.bot.config.get("osu_token_directory"),
         )
         self.twitch = TwitchApi()
         self.tillerino = TillerinoApi(self.bot.config.get("tillerino_api_key"))
