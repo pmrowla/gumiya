@@ -47,9 +47,10 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
         self.bot.log.info("[twitch] Connected to twitch as {}".format(self.bot.nick))
 
     def validate_beatmaps(self, beatmaps, mapset, **kwargs):
+        options = kwargs.get("options")
         valid_beatmaps = []
         for beatmap, diff in beatmaps:
-            if beatmap.approved not in options.allowed_status_list:
+            if beatmap.status not in options.allowed_status_list:
                 if len(beatmaps) > 1:
                     reason = "Rejecting [{}] mapset {} - {} (by {}): Approved status must be one of: {}".format(
                         beatmap.status.name.capitalize(),

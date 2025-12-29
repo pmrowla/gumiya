@@ -21,4 +21,4 @@ django-redis==5.2.0
 irc3==1.1.10
 aiohttp==3.12.14
 aiocron==1.8
-gumiyabot==1.1.2
+gumiyabot==1.1.3
