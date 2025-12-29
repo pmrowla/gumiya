@@ -1,6 +1,6 @@
 -r base.txt
 
-Werkzeug[watchdog]==2.2.3
+Werkzeug[watchdog]==3.1.4
 ipdb==0.13.9
 psycopg2==2.9.3
 
