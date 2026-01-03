@@ -83,7 +83,7 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                 diff.star_rating >= options.beatmap_min_stars
                 and diff.star_rating <= options.beatmap_max_stars
             ):
-                valid_beatmaps.append(beatmap)
+                valid_beatmaps.append((beatmap, diff))
         if not valid_beatmaps:
             beatmap, diff = beatmaps[0]
             if len(beatmaps) > 1:
