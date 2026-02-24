@@ -69,7 +69,7 @@ class GumiyaTwitchPlugin(BaseTwitchPlugin):
                         beatmap.status.name.capitalize(),
                         mapset.artist,
                         mapset.title,
-                        mapset.version,
+                        beatmap.version,
                         mapset.creator,
                         ", ".join(
                             map(
