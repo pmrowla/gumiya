@@ -2,6 +2,7 @@
 """
 twitch_osu_bot Twitch chat irc3 plugin.
 """
+
 import asyncio
 
 import irc3
