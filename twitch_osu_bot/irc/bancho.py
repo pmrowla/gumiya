@@ -2,6 +2,7 @@
 """
 Gumiya Bancho (osu!) irc3 plugin.
 """
+
 import irc3
 from asgiref.sync import sync_to_async
 from django.contrib.sites.shortcuts import get_current_site
