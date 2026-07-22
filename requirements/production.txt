@@ -4,7 +4,7 @@
 
 
 gunicorn==23.0.0
-psycopg2==2.9.3
+psycopg2==2.9.12
 Collectfast==2.2.0
 sentry-sdk[django]==2.8.0
 
